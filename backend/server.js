@@ -30,7 +30,7 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     /^image\/(jpeg|jpg|png|gif|webp)$/.test(file.mimetype)
       ? cb(null, true)
-      : cb(new Error('Kun billedfiler er tilladt'));
+      : cb(new Error('Only image files are allowed'));
   },
 });
 
@@ -961,16 +961,16 @@ app.post('/api/background-images', auth, (req, res) => {
       const cl = parseInt(req.headers['content-length'] || '0', 10);
       const mb = (cl / 1048576).toFixed(1);
       const msg = err.code === 'LIMIT_FILE_SIZE'
-        ? `Billedet er for stort (modtog ~${mb}MB, maks 25MB)`
-        : (err.message || 'Upload fejlede');
+        ? `Image too large (received ~${mb}MB, max 25MB)`
+        : (err.message || 'Upload failed');
       return res.status(400).json({ error: msg });
     }
-    if (!req.file) return res.status(400).json({ error: 'Ingen fil uploadet' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const uid = String(req.user.id);
     let existing;
     try { existing = fs.readdirSync(UPLOADS_DIR).filter(f => f.startsWith(`bg_${uid}_`)); } catch { existing = []; }
-    if (existing.length >= 10) return res.status(400).json({ error: 'Maks 10 baggrundsbilleder tilladt' });
+    if (existing.length >= 10) return res.status(400).json({ error: 'Max 10 background images allowed' });
 
     const filename = `bg_${uid}_${Date.now()}.jpg`;
     try {
@@ -978,7 +978,7 @@ app.post('/api/background-images', auth, (req, res) => {
       fs.writeFileSync(path.join(UPLOADS_DIR, filename), req.file.buffer);
     } catch (e) {
       console.error('[TaskTimer] Failed to save background image:', e.message);
-      return res.status(500).json({ error: 'Kunne ikke gemme billedet på serveren' });
+      return res.status(500).json({ error: 'Could not save the image on the server' });
     }
     res.json({ filename, url: `/uploads/${filename}` });
   });
