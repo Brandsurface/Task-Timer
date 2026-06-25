@@ -416,6 +416,9 @@ body::after {
 .settings-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .settings-row { display: flex; gap: 10px; }
 .color-input { width: 100%; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--border); cursor: pointer; padding: 3px; background: var(--surface2); }
+.font-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 9px 12px; cursor: pointer; font-size: 14px; color: var(--text); transition: border-color 0.15s, background 0.15s; text-align: left; width: 100%; line-height: 1.3; }
+.font-btn.active { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
+.font-btn:hover:not(.active) { border-color: var(--border2); background: var(--surface3); }
 .color-input::-webkit-color-swatch-wrapper { padding: 0; }
 .color-input::-webkit-color-swatch { border-radius: 5px; border: none; }
 .gradient-preview { width: 100%; height: 48px; border-radius: var(--r-sm); border: 1px solid var(--border); transition: background 0.3s; }
@@ -895,6 +898,12 @@ body.has-bg-image #bgDotOverlay { display: block; }
             <input class="form-input" id="sEmail" type="email" disabled />
           </div>
           <button class="btn btn-primary" id="saveProfileBtn"><span class="btn-text">Save profile</span></button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Skrifttype</div>
+        <div class="settings-body">
+          <div id="fontPicker" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
         </div>
       </div>
       <div class="settings-section">
@@ -1518,7 +1527,7 @@ function cacheGet(key) { try { return JSON.parse(localStorage.getItem(key)); } c
 function bootOffline() {
   setOffline(true);
   me = cacheGet('tt_me') || me || { name: '' };
-  if (me && me.preferences) { applyGradient(me.preferences); applyBackground(me.preferences); }
+  if (me && me.preferences) { applyGradient(me.preferences); applyBackground(me.preferences); applyFont(me.preferences); }
   tasks = cacheGet('tt_tasks') || [];
   mergePendingTasks();
   todayEntries = cacheGet('tt_today_entries') || [];
@@ -1585,6 +1594,70 @@ function applyTheme(theme) {
   if (drawerIcon) drawerIcon.innerHTML = svgIcon;
 }
 function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+
+// ── FONT CUSTOMISATION ──
+const GOOGLE_FONTS = [
+  { name: 'DM Sans',          stack: "'DM Sans', sans-serif",           weights: '300;400;500;600;700' },
+  { name: 'Inter',            stack: "'Inter', sans-serif",              weights: '300;400;500;600;700' },
+  { name: 'Roboto',           stack: "'Roboto', sans-serif",             weights: '300;400;500;700' },
+  { name: 'Open Sans',        stack: "'Open Sans', sans-serif",          weights: '300;400;500;600;700' },
+  { name: 'Lato',             stack: "'Lato', sans-serif",               weights: '300;400;700' },
+  { name: 'Montserrat',       stack: "'Montserrat', sans-serif",         weights: '300;400;500;600;700' },
+  { name: 'Poppins',          stack: "'Poppins', sans-serif",            weights: '300;400;500;600;700' },
+  { name: 'Nunito',           stack: "'Nunito', sans-serif",             weights: '300;400;500;600;700' },
+  { name: 'Raleway',          stack: "'Raleway', sans-serif",            weights: '300;400;500;600;700' },
+  { name: 'Source Sans 3',    stack: "'Source Sans 3', sans-serif",      weights: '300;400;500;600;700' },
+  { name: 'Oswald',           stack: "'Oswald', sans-serif",             weights: '300;400;500;600;700' },
+  { name: 'Merriweather',     stack: "'Merriweather', serif",            weights: '300;400;700' },
+  { name: 'Playfair Display', stack: "'Playfair Display', serif",        weights: '400;500;600;700' },
+  { name: 'PT Sans',          stack: "'PT Sans', sans-serif",            weights: '400;700' },
+  { name: 'Fira Sans',        stack: "'Fira Sans', sans-serif",          weights: '300;400;500;600;700' },
+  { name: 'Work Sans',        stack: "'Work Sans', sans-serif",          weights: '300;400;500;600;700' },
+  { name: 'Noto Sans',        stack: "'Noto Sans', sans-serif",          weights: '300;400;500;600;700' },
+  { name: 'Ubuntu',           stack: "'Ubuntu', sans-serif",             weights: '300;400;500;700' },
+  { name: 'Mulish',           stack: "'Mulish', sans-serif",             weights: '300;400;500;600;700' },
+  { name: 'Quicksand',        stack: "'Quicksand', sans-serif",          weights: '300;400;500;600;700' },
+];
+
+function applyFont(prefs) {
+  const fontName = (prefs && prefs.font) || 'DM Sans';
+  const font = GOOGLE_FONTS.find(f => f.name === fontName) || GOOGLE_FONTS[0];
+  if (font.name !== 'DM Sans') {
+    let el = document.getElementById('googleFontLink');
+    if (!el) { el = document.createElement('link'); el.id = 'googleFontLink'; el.rel = 'stylesheet'; document.head.appendChild(el); }
+    el.href = `https://fonts.googleapis.com/css2?family=${font.name.replace(/ /g, '+')}:wght@${font.weights}&display=swap`;
+  }
+  document.documentElement.style.setProperty('--sans', font.stack);
+}
+
+function renderFontPicker() {
+  // Lazy-load all fonts for preview when settings opens
+  if (!document.getElementById('allFontsPreviewLink')) {
+    const lk = document.createElement('link');
+    lk.id = 'allFontsPreviewLink'; lk.rel = 'stylesheet';
+    const families = GOOGLE_FONTS.filter(f => f.name !== 'DM Sans')
+      .map(f => `family=${f.name.replace(/ /g, '+')}:wght@400;600`).join('&');
+    lk.href = `https://fonts.googleapis.com/css2?${families}&display=swap`;
+    document.head.appendChild(lk);
+  }
+  const container = document.getElementById('fontPicker');
+  if (!container) return;
+  const currentFont = (me && me.preferences && me.preferences.font) || 'DM Sans';
+  container.innerHTML = GOOGLE_FONTS.map(f =>
+    `<button class="font-btn${f.name === currentFont ? ' active' : ''}" style="font-family:${f.stack}" onclick="selectFont(${JSON.stringify(f.name)})">${esc(f.name)}</button>`
+  ).join('');
+}
+
+async function selectFont(name) {
+  const prefs = Object.assign({}, (me && me.preferences) || {}, { font: name });
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+    if (me) me.preferences = updated.preferences;
+    applyFont(prefs);
+    renderFontPicker();
+    toast('Font gemt', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
 
 // ── GRADIENT CUSTOMISATION ──
 const GRAD_DEFAULTS = {
@@ -2026,6 +2099,7 @@ async function init() {
     cacheSet('tt_me', me);
     applyGradient(me.preferences);
     applyBackground(me.preferences);
+    applyFont(me.preferences);
     loadBgImages();
     await loadTasks();
     await loadTodayEntries();
@@ -2164,6 +2238,7 @@ async function afterAuth(res) {
   token = res.token; localStorage.setItem('tt_token', token); me = res.user;
   applyGradient(me.preferences);
   applyBackground(me.preferences);
+  applyFont(me.preferences);
   await loadTasks(); await loadTodayEntries(); await fetchWeekTotal();
   restoreTimers();
   await syncOutbox();
@@ -3248,6 +3323,7 @@ function loadSettingsForm() {
   document.getElementById('sWeekGoal').value = weekGoalH;
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
   loadApiKeyStatus();
+  renderFontPicker();
 }
 
 async function saveProfile() {
