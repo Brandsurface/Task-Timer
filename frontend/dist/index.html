@@ -614,12 +614,12 @@ footer a:hover { color: var(--text-dim); }
 
 /* ── BACKGROUND IMAGE MODE ── */
 .has-bg-image .task-card {
-  background: rgba(17,19,22,0.74);
+  background: rgba(17,19,22, var(--card-opacity, 0.74));
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 [data-theme="light"] .has-bg-image .task-card {
-  background: rgba(255,255,255,0.76);
+  background: rgba(255,255,255, var(--card-opacity, 0.76));
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -997,7 +997,12 @@ body.has-bg-image #bgDotOverlay { display: block; }
               <span>Coarse</span>
             </button>
           </div>
-          <div class="form-label" style="margin-bottom:6px">Images <span id="bgImageCount" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(0/10)</span></div>
+          <div class="form-label" style="margin-top:10px;margin-bottom:4px">Card opacity</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="range" id="bgCardOpacitySlider" min="0" max="1" step="0.05" value="0.75" style="flex:1;accent-color:var(--orange);cursor:pointer">
+            <span id="bgCardOpacityLabel" style="font-size:12px;color:var(--text-dim);min-width:34px;text-align:right">75%</span>
+          </div>
+          <div class="form-label" style="margin-top:10px;margin-bottom:6px">Images <span id="bgImageCount" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(0/10)</span></div>
           <div class="bg-gallery" id="bgGallery"></div>
           <div style="margin-top:10px">
             <div class="form-label" style="margin-bottom:4px">Slideshow</div>
@@ -1716,8 +1721,10 @@ function applyBackground(prefs) {
       if (s) { s.style.opacity = '0'; s.style.backgroundImage = ''; }
     });
     _bgNextSlot = 'A';
+    document.documentElement.style.removeProperty('--card-opacity');
     return;
   }
+  document.documentElement.style.setProperty('--card-opacity', (p.bgCardOpacity != null) ? p.bgCardOpacity : 0.75);
   const overlayKey = p.bgOverlay || 'dots-sm';
   const darkDotMap  = { 'dots-sm': 'rgba(0,0,0,0.42) 1px',   'dots-md': 'rgba(0,0,0,0.32) 1.5px', 'dots-lg': 'rgba(0,0,0,0.25) 2.5px' };
   const lightDotMap = { 'dots-sm': 'rgba(0,0,0,0.18) 1px',   'dots-md': 'rgba(0,0,0,0.13) 1.5px', 'dots-lg': 'rgba(0,0,0,0.10) 2.5px' };
@@ -3716,6 +3723,30 @@ function switchTab(name) {
             const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
             if (me) me.preferences = updated.preferences;
             applyBackground(prefs);
+          } catch (e) { toast(e.message, 'err'); }
+        });
+      }
+    }
+    const opSlider = document.getElementById('bgCardOpacitySlider');
+    const opLabel  = document.getElementById('bgCardOpacityLabel');
+    if (opSlider && opLabel) {
+      const cur = (me && me.preferences && me.preferences.bgCardOpacity != null)
+        ? me.preferences.bgCardOpacity : 0.75;
+      opSlider.value = cur;
+      opLabel.textContent = Math.round(cur * 100) + '%';
+      if (!opSlider.dataset.bound) {
+        opSlider.dataset.bound = '1';
+        opSlider.addEventListener('input', () => {
+          const v = parseFloat(opSlider.value);
+          opLabel.textContent = Math.round(v * 100) + '%';
+          document.documentElement.style.setProperty('--card-opacity', v);
+        });
+        opSlider.addEventListener('change', async () => {
+          const v = parseFloat(opSlider.value);
+          const prefs = Object.assign({}, (me && me.preferences) || {}, { bgCardOpacity: v });
+          try {
+            const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+            if (me) me.preferences = updated.preferences;
           } catch (e) { toast(e.message, 'err'); }
         });
       }
