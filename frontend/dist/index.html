@@ -640,6 +640,24 @@ footer a:hover { color: var(--text-dim); }
   -webkit-backdrop-filter: blur(16px) !important;
 }
 
+/* ── SLIDESHOW LAYERS ── */
+#bgSlideA, #bgSlideB {
+  position: fixed; inset: 0; z-index: -2;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  opacity: 0;
+  transition: opacity 3s ease-in-out;
+}
+#bgDotOverlay {
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none;
+  display: none;
+}
+body.has-bg-image { background: var(--bg); }
+body.has-bg-image #bgDotOverlay { display: block; }
+
 /* ── BG IMAGE GALLERY ── */
 .bg-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 2px; }
 .bg-img-item { position: relative; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.12s; }
@@ -667,6 +685,9 @@ footer a:hover { color: var(--text-dim); }
 </style>
 </head>
 <body>
+<div id="bgSlideA" aria-hidden="true"></div>
+<div id="bgSlideB" aria-hidden="true"></div>
+<div id="bgDotOverlay" aria-hidden="true"></div>
 <div id="appShell"></div>
 
 <!-- DRAWER OVERLAY — in body, never clipped by page overflow:hidden -->
@@ -978,6 +999,18 @@ footer a:hover { color: var(--text-dim); }
           </div>
           <div class="form-label" style="margin-bottom:6px">Images <span id="bgImageCount" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(0/10)</span></div>
           <div class="bg-gallery" id="bgGallery"></div>
+          <div style="margin-top:10px">
+            <div class="form-label" style="margin-bottom:4px">Slideshow</div>
+            <select class="form-input" id="bgIntervalSelect" style="height:40px;padding:8px 13px;cursor:pointer">
+              <option value="0">Off — static image</option>
+              <option value="15">Every 15 seconds</option>
+              <option value="30">Every 30 seconds</option>
+              <option value="60">Every minute</option>
+              <option value="120">Every 2 minutes</option>
+              <option value="300">Every 5 minutes</option>
+              <option value="600">Every 10 minutes</option>
+            </select>
+          </div>
           <div style="margin-top:8px">
             <input type="file" id="bgFileInput" accept="image/*" multiple style="display:none" />
             <button class="btn btn-ghost btn-sm btn-full" id="bgUploadBtn">
@@ -1623,41 +1656,92 @@ async function resetGradient() {
 }
 
 // ── BACKGROUND IMAGES ──
-let _bgImages = [];
+let _bgImages       = [];
+let _slideshowTimer = null;
+let _slideshowIdx   = 0;
+let _bgNextSlot     = 'A';
+
+function stopSlideshow() {
+  if (_slideshowTimer) { clearInterval(_slideshowTimer); _slideshowTimer = null; }
+}
+
+function showBgSlide(url, immediate) {
+  const slotA = document.getElementById('bgSlideA');
+  const slotB = document.getElementById('bgSlideB');
+  if (!slotA || !slotB) return;
+  const next = _bgNextSlot === 'A' ? slotA : slotB;
+  const curr = _bgNextSlot === 'A' ? slotB : slotA;
+  if (immediate) {
+    next.style.transition = 'none';
+    next.style.backgroundImage = `url('${url}')`;
+    next.style.opacity = '1';
+    curr.style.opacity = '0';
+    requestAnimationFrame(() => { next.style.transition = ''; });
+  } else {
+    next.style.backgroundImage = `url('${url}')`;
+    next.getBoundingClientRect();
+    next.style.opacity = '1';
+    curr.style.opacity = '0';
+  }
+  _bgNextSlot = _bgNextSlot === 'A' ? 'B' : 'A';
+}
+
+function startSlideshow(prefs) {
+  stopSlideshow();
+  if (!_bgImages.length) return;
+  const activeBg  = prefs && prefs.bgImage;
+  const startIdx  = activeBg ? Math.max(0, _bgImages.findIndex(i => i.url === activeBg)) : 0;
+  _slideshowIdx   = startIdx;
+  showBgSlide(_bgImages[_slideshowIdx].url, true);
+  if (_bgImages.length < 2) return;
+  const intervalSec = (prefs && prefs.bgSlideshowInterval != null) ? Number(prefs.bgSlideshowInterval) : 60;
+  if (intervalSec <= 0) return;
+  _slideshowTimer = setInterval(() => {
+    if (!_bgImages.length) return;
+    _slideshowIdx = (_slideshowIdx + 1) % _bgImages.length;
+    showBgSlide(_bgImages[_slideshowIdx].url);
+  }, intervalSec * 1000);
+}
 
 function applyBackground(prefs) {
   const p = prefs || {};
   document.body.classList.toggle('has-bg-image', !!p.bgImage);
   let el = document.getElementById('bgStyle');
   if (!el) { el = document.createElement('style'); el.id = 'bgStyle'; document.head.appendChild(el); }
-  if (!p.bgImage) { el.textContent = ''; return; }
-
+  if (!p.bgImage) {
+    el.textContent = '';
+    stopSlideshow();
+    ['bgSlideA', 'bgSlideB'].forEach(id => {
+      const s = document.getElementById(id);
+      if (s) { s.style.opacity = '0'; s.style.backgroundImage = ''; }
+    });
+    _bgNextSlot = 'A';
+    return;
+  }
   const overlayKey = p.bgOverlay || 'dots-sm';
   const darkDotMap  = { 'dots-sm': 'rgba(0,0,0,0.42) 1px',   'dots-md': 'rgba(0,0,0,0.32) 1.5px', 'dots-lg': 'rgba(0,0,0,0.25) 2.5px' };
   const lightDotMap = { 'dots-sm': 'rgba(0,0,0,0.18) 1px',   'dots-md': 'rgba(0,0,0,0.13) 1.5px', 'dots-lg': 'rgba(0,0,0,0.10) 2.5px' };
   const sizeMap     = { 'dots-sm': '6px 6px', 'dots-md': '12px 12px', 'dots-lg': '20px 20px' };
-
   const dd  = darkDotMap[overlayKey]  || darkDotMap['dots-sm'];
   const ld  = lightDotMap[overlayKey] || lightDotMap['dots-sm'];
   const sz  = sizeMap[overlayKey]     || sizeMap['dots-sm'];
-  const img = `url('${p.bgImage}')`;
-
   el.textContent = `
-    body {
+    #bgDotOverlay {
       background-image: radial-gradient(circle, ${dd}, transparent ${dd.split(' ').pop()}),
-        linear-gradient(160deg, rgba(17,13,24,0.64) 0%, rgba(20,12,4,0.64) 100%), ${img};
-      background-size: ${sz}, 100% 100%, cover;
-      background-position: 0 0, 0 0, center center;
-      background-attachment: fixed, fixed, fixed;
+        linear-gradient(160deg, rgba(17,13,24,0.64) 0%, rgba(20,12,4,0.64) 100%);
+      background-size: ${sz}, 100% 100%;
+      background-position: 0 0, 0 0;
+      background-attachment: fixed, fixed;
     }
-    [data-theme="light"] body {
+    [data-theme="light"] #bgDotOverlay {
       background-image: radial-gradient(circle, ${ld}, transparent ${ld.split(' ').pop()}),
-        linear-gradient(160deg, rgba(250,246,240,0.52) 0%, rgba(252,245,232,0.52) 100%), ${img};
-      background-size: ${sz}, 100% 100%, cover;
-      background-position: 0 0, 0 0, center center;
-      background-attachment: fixed, fixed, fixed;
+        linear-gradient(160deg, rgba(250,246,240,0.52) 0%, rgba(252,245,232,0.52) 100%);
+      background-size: ${sz}, 100% 100%;
+      background-position: 0 0, 0 0;
+      background-attachment: fixed, fixed;
     }
   `;
+  startSlideshow(p);
 }
 
 async function loadBgImages() {
@@ -1723,6 +1807,7 @@ async function deleteBgImage(filename) {
     }
     _bgImages = _bgImages.filter(i => i.filename !== filename);
     renderBgGallery();
+    if (me && me.preferences && me.preferences.bgImage) startSlideshow(me.preferences);
     toast('Image deleted', 'ok');
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -3616,6 +3701,23 @@ function switchTab(name) {
     const activeOverlay = (me && me.preferences && me.preferences.bgOverlay) || 'dots-sm';
     document.querySelectorAll('#bgOverlayPicker .bg-overlay-opt').forEach(el =>
       el.classList.toggle('active', el.dataset.overlay === activeOverlay));
+    const bgSel = document.getElementById('bgIntervalSelect');
+    if (bgSel) {
+      bgSel.value = String((me && me.preferences && me.preferences.bgSlideshowInterval != null)
+        ? me.preferences.bgSlideshowInterval : 60);
+      if (!bgSel.dataset.bound) {
+        bgSel.dataset.bound = '1';
+        bgSel.addEventListener('change', async () => {
+          const interval = parseInt(bgSel.value, 10);
+          const prefs = Object.assign({}, (me && me.preferences) || {}, { bgSlideshowInterval: interval });
+          try {
+            const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+            if (me) me.preferences = updated.preferences;
+            applyBackground(prefs);
+          } catch (e) { toast(e.message, 'err'); }
+        });
+      }
+    }
   }
 }
 
