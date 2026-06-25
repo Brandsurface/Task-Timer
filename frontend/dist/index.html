@@ -3091,6 +3091,16 @@ async function renderWeek() {
   dates.forEach((d, i) => {
     const dk = localDateStr(d), isToday = dk === today;
     const dayE = entries.filter(e => e.date === dk);
+    // Group entries by task_id so duplicate tasks show as one accumulated row
+    const dayGrouped = Object.values(dayE.reduce((acc, e) => {
+      if (!acc[e.task_id]) acc[e.task_id] = { ...e, seconds: 0, count: 0 };
+      const g = acc[e.task_id];
+      if (e.start_time < g.start_time) g.start_time = e.start_time;
+      if (e.end_time   > g.end_time)   g.end_time   = e.end_time;
+      g.seconds += e.seconds;
+      g.count++;
+      return acc;
+    }, {}));
     // Today: committed entries + live timers; other days: committed entries only
     const liveTotal = isToday ? tasks.reduce((s, t) => s + liveSec(t.id), 0) : 0;
     const dayTotal  = isToday
@@ -3100,17 +3110,26 @@ async function renderWeek() {
     const block = document.createElement('div');
     block.className = 'day-block';
 
+    const _copySvg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>`;
+    const entryRow = g => g.count > 1
+      ? `<div class="week-entry">
+           <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
+           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}</div></div>
+           <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
+           <div class="we-dur">${hm(g.seconds)}</div>
+         </div>`
+      : `<div class="week-entry" data-eid="${g.id}">
+           <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
+           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
+           <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
+           <div class="we-dur">${hm(g.seconds)}</div>
+           <div class="we-del" data-did="${g.id}" title="Delete">✕</div>
+         </div>`;
+
     // Build entries HTML for today: committed rows + live timer rows
     let entriesHtml;
     if (isToday) {
-      const committedRows = dayE.map(e =>
-        `<div class="week-entry" data-eid="${e.id}">
-           <div class="we-dot" style="background:${esc(e.task_color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(e.task_name)}</div><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
-           <div class="we-copy" data-name="${esc(e.task_name)}" title="Copy job number"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></div>
-           <div class="we-dur">${hm(e.seconds)}</div>
-           <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
-         </div>`).join('');
+      const committedRows = dayGrouped.map(g => entryRow(g)).join('');
       const liveRows = tasks.filter(t => liveTimers[t.id]).map(t =>
         `<div class="week-entry">
            <div class="we-dot" style="background:${esc(t.color||'#f07c28')}"></div>
@@ -3119,16 +3138,9 @@ async function renderWeek() {
          </div>`).join('');
       entriesHtml = committedRows + liveRows || '<div class="week-empty">No time yet</div>';
     } else {
-      entriesHtml = dayE.length === 0
+      entriesHtml = dayGrouped.length === 0
         ? '<div class="week-empty">No entries</div>'
-        : dayE.map(e =>
-          `<div class="week-entry" data-eid="${e.id}">
-           <div class="we-dot" style="background:${esc(e.task_color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(e.task_name)}</div><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
-           <div class="we-copy" data-name="${esc(e.task_name)}" title="Copy job number"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></div>
-           <div class="we-dur">${hm(e.seconds)}</div>
-           <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
-           </div>`).join('');
+        : dayGrouped.map(g => entryRow(g)).join('');
     }
     block.innerHTML = `
       <div class="day-header${isToday ? ' today-hdr' : ''}">
