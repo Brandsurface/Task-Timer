@@ -1,0 +1,366 @@
+// server.js — TaskTimer API  (v2 — bug-fixed)
+'use strict';
+
+const express  = require('express');
+const cors     = require('cors');
+const bcrypt   = require('bcryptjs');
+const jwt      = require('jsonwebtoken');
+const path     = require('path');
+const db       = require('./db');
+
+const app = express();
+const PORT       = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'tasktimer-change-in-production-please';
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// ── AUTH MIDDLEWARE ──
+function auth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    req.user = jwt.verify(header.slice(7), JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Ugyldig eller udløbet session — log ind igen' });
+  }
+}
+
+function adminOnly(req, res, next) {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Kun admin' });
+  next();
+}
+
+// ── HELPERS ──
+function todayDK() {
+  // Use server local date — important for NAS running in non-UTC timezone
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// FIX: Handle midnight crossover (e.g. start=23:50, end=00:10)
+function timeToSeconds(start, end) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let seconds = (eh * 60 + em - sh * 60 - sm) * 60;
+  if (seconds < 0) seconds += 86400; // crossed midnight
+  return seconds;
+}
+
+function validHour(h) {
+  const n = parseInt(h);
+  return Number.isInteger(n) && n >= 0 && n <= 23;
+}
+
+// ─────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────
+
+app.post('/api/auth/register', (req, res) => {
+  const { email, name, password } = req.body;
+  if (!email?.trim() || !name?.trim() || !password)
+    return res.status(400).json({ error: 'Udfyld alle felter' });
+  if (password.length < 6)
+    return res.status(400).json({ error: 'Adgangskode skal være mindst 6 tegn' });
+
+  const count = db.prepare('SELECT COUNT(*) as n FROM users').get();
+  const role  = count.n === 0 ? 'admin' : 'user';
+  const hash  = bcrypt.hashSync(password, 10);
+
+  try {
+    const result = db.prepare(
+      'INSERT INTO users (email, name, password, role) VALUES (?, ?, ?, ?)'
+    ).run(email.toLowerCase().trim(), name.trim(), hash, role);
+
+    const user  = db.prepare('SELECT id, email, name, role, day_end_hour FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user });
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email er allerede registreret' });
+    res.status(500).json({ error: 'Serverfejl' });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Udfyld email og adgangskode' });
+
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+  if (!user || !bcrypt.compareSync(password, user.password))
+    return res.status(401).json({ error: 'Forkert email eller adgangskode' });
+
+  const { password: _, ...safeUser } = user;
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
+  res.json({ token, user: safeUser });
+});
+
+app.get('/api/auth/me', auth, (req, res) => {
+  const user = db.prepare('SELECT id, email, name, role, day_end_hour FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'Bruger ikke fundet' });
+  res.json(user);
+});
+
+app.patch('/api/auth/me', auth, (req, res) => {
+  const { name, day_end_hour, current_password, new_password } = req.body;
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'Bruger ikke fundet' });
+
+  const updates = {};
+  if (name !== undefined && name.trim()) updates.name = name.trim();
+
+  // FIX: Proper validation — day_end_hour=0 is valid, check explicitly
+  if (day_end_hour !== undefined) {
+    if (!validHour(day_end_hour)) return res.status(400).json({ error: 'Ugyldig time (0-23)' });
+    updates.day_end_hour = parseInt(day_end_hour);
+  }
+
+  if (new_password !== undefined) {
+    if (!current_password) return res.status(400).json({ error: 'Nuværende adgangskode påkrævet' });
+    if (!bcrypt.compareSync(current_password, user.password))
+      return res.status(401).json({ error: 'Forkert nuværende adgangskode' });
+    if (new_password.length < 6) return res.status(400).json({ error: 'Ny adgangskode skal være mindst 6 tegn' });
+    updates.password = bcrypt.hashSync(new_password, 10);
+  }
+
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Intet at opdatere' });
+
+  const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  db.prepare(`UPDATE users SET ${sets} WHERE id = ?`).run(...Object.values(updates), req.user.id);
+
+  const updated = db.prepare('SELECT id, email, name, role, day_end_hour FROM users WHERE id = ?').get(req.user.id);
+  res.json(updated);
+});
+
+// ─────────────────────────────────────────
+//  TASKS
+// ─────────────────────────────────────────
+
+app.get('/api/tasks', auth, (req, res) => {
+  const tasks = db.prepare(
+    'SELECT * FROM tasks WHERE user_id = ? AND archived = 0 ORDER BY sort_order ASC, created_at ASC'
+  ).all(req.user.id);
+  res.json(tasks);
+});
+
+app.post('/api/tasks', auth, (req, res) => {
+  const { name, color } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'Opgavenavn påkrævet' });
+
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as m FROM tasks WHERE user_id = ?').get(req.user.id);
+  const result   = db.prepare(
+    'INSERT INTO tasks (user_id, name, color, sort_order) VALUES (?, ?, ?, ?)'
+  ).run(req.user.id, name.trim(), color || '#f07c28', (maxOrder.m || 0) + 1);
+
+  res.status(201).json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid));
+});
+
+app.patch('/api/tasks/:id', auth, (req, res) => {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!task) return res.status(404).json({ error: 'Opgave ikke fundet' });
+
+  const { name, color, sort_order } = req.body;
+  const updates = {};
+  if (name       !== undefined) updates.name       = name.trim();
+  if (color      !== undefined) updates.color      = color;
+  if (sort_order !== undefined) updates.sort_order = sort_order;
+
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'Intet at opdatere' });
+
+  const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  db.prepare(`UPDATE tasks SET ${sets} WHERE id = ?`).run(...Object.values(updates), task.id);
+  res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(task.id));
+});
+
+app.post('/api/tasks/reorder', auth, (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) return res.status(400).json({ error: 'order skal være et array' });
+
+  const update = db.prepare('UPDATE tasks SET sort_order = ? WHERE id = ? AND user_id = ?');
+  db.transaction(() => order.forEach((id, idx) => update.run(idx, id, req.user.id)))();
+  res.json({ ok: true });
+});
+
+app.delete('/api/tasks/:id', auth, (req, res) => {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!task) return res.status(404).json({ error: 'Opgave ikke fundet' });
+  // Archive — preserves historical entries
+  db.prepare('UPDATE tasks SET archived = 1 WHERE id = ?').run(task.id);
+  res.json({ ok: true });
+});
+
+// ─────────────────────────────────────────
+//  TIME ENTRIES
+// ─────────────────────────────────────────
+
+// FIX: Added GET /api/entries/:id so editEntry() can fetch a single entry
+app.get('/api/entries/:id', auth, (req, res) => {
+  const entry = db.prepare(`
+    SELECT e.*, t.name as task_name, t.color as task_color
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.id = ? AND e.user_id = ?
+  `).get(req.params.id, req.user.id);
+  if (!entry) return res.status(404).json({ error: 'Registrering ikke fundet' });
+  res.json(entry);
+});
+
+app.get('/api/entries/today', auth, (req, res) => {
+  const entries = db.prepare(`
+    SELECT e.*, t.name as task_name, t.color as task_color
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ? AND e.date = ? AND e.committed = 0
+    ORDER BY e.start_time ASC
+  `).all(req.user.id, todayDK());
+  res.json(entries);
+});
+
+app.get('/api/entries', auth, (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from og to dato påkrævet' });
+
+  const entries = db.prepare(`
+    SELECT e.*, t.name as task_name, t.color as task_color
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ? AND e.date >= ? AND e.date <= ? AND e.committed = 1
+    ORDER BY e.date ASC, e.start_time ASC
+  `).all(req.user.id, from, to);
+  res.json(entries);
+});
+
+app.post('/api/entries', auth, (req, res) => {
+  const { task_id, date, start_time, end_time, note, committed } = req.body;
+  if (!task_id || !date || !start_time || !end_time)
+    return res.status(400).json({ error: 'Manglende felter: task_id, date, start_time, end_time' });
+
+  const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND user_id = ?').get(task_id, req.user.id);
+  if (!task) return res.status(404).json({ error: 'Opgave ikke fundet' });
+
+  const seconds = timeToSeconds(start_time, end_time);
+  if (seconds <= 0) return res.status(400).json({ error: 'Sluttid skal være efter starttid' });
+
+  const result = db.prepare(`
+    INSERT INTO time_entries (user_id, task_id, date, start_time, end_time, seconds, note, committed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.id, task_id, date, start_time, end_time, seconds, note || '', committed ? 1 : 0);
+
+  res.status(201).json(db.prepare(`
+    SELECT e.*, t.name as task_name, t.color as task_color
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id WHERE e.id = ?
+  `).get(result.lastInsertRowid));
+});
+
+app.patch('/api/entries/:id', auth, (req, res) => {
+  const entry = db.prepare('SELECT * FROM time_entries WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!entry) return res.status(404).json({ error: 'Registrering ikke fundet' });
+
+  const { start_time, end_time, note, task_id } = req.body;
+  const updates = {};
+
+  if (start_time !== undefined) updates.start_time = start_time;
+  if (end_time   !== undefined) updates.end_time   = end_time;
+  if (note       !== undefined) updates.note       = note;
+  if (task_id    !== undefined) {
+    const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND user_id = ?').get(task_id, req.user.id);
+    if (!task) return res.status(404).json({ error: 'Opgave ikke fundet' });
+    updates.task_id = task_id;
+  }
+
+  const newStart   = updates.start_time || entry.start_time;
+  const newEnd     = updates.end_time   || entry.end_time;
+  updates.seconds  = timeToSeconds(newStart, newEnd);
+  if (updates.seconds <= 0) return res.status(400).json({ error: 'Sluttid skal være efter starttid' });
+  updates.updated_at = new Date().toISOString();
+
+  const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  db.prepare(`UPDATE time_entries SET ${sets} WHERE id = ?`).run(...Object.values(updates), entry.id);
+
+  res.json(db.prepare(`
+    SELECT e.*, t.name as task_name, t.color as task_color
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id WHERE e.id = ?
+  `).get(entry.id));
+});
+
+app.delete('/api/entries/:id', auth, (req, res) => {
+  const entry = db.prepare('SELECT * FROM time_entries WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!entry) return res.status(404).json({ error: 'Registrering ikke fundet' });
+  db.prepare('DELETE FROM time_entries WHERE id = ?').run(entry.id);
+  res.json({ ok: true });
+});
+
+// IMPORTANT: specific routes must come BEFORE :id wildcard
+app.post('/api/entries/end-day', auth, (req, res) => {
+  const dk = todayDK();
+  const uncommitted = db.prepare(
+    'SELECT * FROM time_entries WHERE user_id = ? AND date = ? AND committed = 0'
+  ).all(req.user.id, dk);
+
+  if (uncommitted.length === 0) return res.json({ committed: 0, entries: [] });
+
+  db.prepare(
+    'UPDATE time_entries SET committed = 1, updated_at = ? WHERE user_id = ? AND date = ? AND committed = 0'
+  ).run(new Date().toISOString(), req.user.id, dk);
+
+  res.json({
+    committed: uncommitted.length,
+    entries: db.prepare(`
+      SELECT e.*, t.name as task_name, t.color as task_color
+      FROM time_entries e JOIN tasks t ON t.id = e.task_id
+      WHERE e.user_id = ? AND e.date = ? AND e.committed = 1
+      ORDER BY e.start_time ASC
+    `).all(req.user.id, dk)
+  });
+});
+
+app.get('/api/entries/week-summary', auth, (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from og to påkrævet' });
+
+  res.json(db.prepare(`
+    SELECT e.date, e.task_id, t.name as task_name, t.color,
+           SUM(e.seconds) as total_seconds, COUNT(*) as entry_count
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ? AND e.date >= ? AND e.date <= ? AND e.committed = 1
+    GROUP BY e.date, e.task_id
+    ORDER BY e.date ASC
+  `).all(req.user.id, from, to));
+});
+
+// FIX: Week total as a single fast query (for stats pill on timer tab)
+app.get('/api/entries/week-total', auth, (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from og to påkrævet' });
+
+  const row = db.prepare(`
+    SELECT COALESCE(SUM(seconds), 0) as total_seconds
+    FROM time_entries
+    WHERE user_id = ? AND date >= ? AND date <= ? AND committed = 1
+  `).get(req.user.id, from, to);
+  res.json(row);
+});
+
+// ─────────────────────────────────────────
+//  ADMIN
+// ─────────────────────────────────────────
+
+app.get('/api/admin/users', auth, adminOnly, (req, res) => {
+  res.json(db.prepare('SELECT id, email, name, role, day_end_hour, created_at FROM users ORDER BY created_at ASC').all());
+});
+
+app.patch('/api/admin/users/:id/password', auth, adminOnly, (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Adgangskode skal være mindst 6 tegn' });
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), req.params.id);
+  res.json({ ok: true });
+});
+
+// ─────────────────────────────────────────
+//  SPA FALLBACK
+// ─────────────────────────────────────────
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`TaskTimer API running on port ${PORT}`);
+});

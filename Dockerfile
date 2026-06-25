@@ -1,0 +1,3691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskTimer</title>
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+<link rel="shortcut icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#f07c28">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ── DARK THEME (default) ── */
+:root {
+  --bg:          #221029;
+  --bg-gradient: linear-gradient(160deg, #221029 0%, #1a0d1f 40%, #2b1a06 100%);
+  --bg-glow:     radial-gradient(ellipse 75% 45% at 50% 0%, rgba(240,124,40,0.08) 0%, transparent 65%),
+                 radial-gradient(ellipse 50% 35% at 15% 30%, rgba(180,80,20,0.04) 0%, transparent 55%),
+                 radial-gradient(ellipse 40% 30% at 85% 80%, rgba(60,40,120,0.03) 0%, transparent 50%);
+  --surface:     #111316;
+  --surface2:    #191c20;
+  --surface3:    #21252b;
+  --border:      #252a30;
+  --border2:     #343b44;
+  --orange:      #f07c28;
+  --orange-light:#ff9e4a;
+  --orange-dark: #c8621a;
+  --orange-grad: linear-gradient(145deg, #ffaa4a 0%, #f07c28 45%, #d4641c 100%);
+  --orange-grad-hover: linear-gradient(145deg, #ffb85c 0%, #f58a38 45%, #dc701e 100%);
+  --red-grad:    linear-gradient(145deg, #ef6a6a 0%, #d94545 45%, #b53333 100%);
+  --red-grad-hover: linear-gradient(145deg, #f57a7a 0%, #e25555 45%, #c23d3d 100%);
+  --shadow-red:  0 2px 12px rgba(217,69,69,0.25), 0 1px 3px rgba(0,0,0,0.4);
+  --gray-grad:   linear-gradient(145deg, #4a5260 0%, #363c47 45%, #2a2f37 100%);
+  --gray-grad-hover: linear-gradient(145deg, #565f6e 0%, #404754 45%, #333944 100%);
+  --shadow-gray: 0 2px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.4);
+  --orange-dim:  rgba(240,124,40,0.13);
+  --green-bg:    #0c1f14;
+  --green-border:#1a3d25;
+  --green:       #3dd68c;
+  --red:         #e05555;
+  --text:        #f0f1f3;
+  --text-dim:    #a8b0bc;
+  --text-muted:  #5c6470;
+  --mono:        'IBM Plex Mono', monospace;
+  --sans:        'DM Sans', sans-serif;
+  --logo:        'Cormorant', serif;
+  --r:           10px;
+  --r-sm:        7px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
+  --shadow-orange: 0 2px 12px rgba(240,124,40,0.25), 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg:          #faf6f0;
+  --bg-gradient: linear-gradient(160deg, #faf6f0 0%, #f8f2e8 40%, #fcf5e8 100%);
+  --bg-glow:     radial-gradient(ellipse 70% 40% at 50% 0%, rgba(240,124,40,0.07) 0%, transparent 60%),
+                 radial-gradient(ellipse 50% 30% at 85% 100%, rgba(180,190,210,0.06) 0%, transparent 55%);
+  --surface:     #ffffff;
+  --surface2:    #f0f1f3;
+  --surface3:    #e5e7ea;
+  --border:      #d0d4da;
+  --border2:     #9ca3af;
+  --orange-grad: linear-gradient(145deg, #ffaa4a 0%, #f07c28 50%, #d4641c 100%);
+  --orange-grad-hover: linear-gradient(145deg, #ffb85c 0%, #f58a38 50%, #dc701e 100%);
+  --red-grad:    linear-gradient(145deg, #ef6a6a 0%, #d94545 50%, #b53333 100%);
+  --red-grad-hover: linear-gradient(145deg, #f57a7a 0%, #e25555 50%, #c23d3d 100%);
+  --shadow-red:  0 2px 12px rgba(217,69,69,0.22), 0 1px 3px rgba(0,0,0,0.1);
+  --gray-grad:   linear-gradient(145deg, #6b7280 0%, #4b5563 50%, #374151 100%);
+  --gray-grad-hover: linear-gradient(145deg, #7a8290 0%, #56616f 50%, #424b5a 100%);
+  --shadow-gray: 0 2px 12px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.1);
+  --orange-dim:  rgba(240,124,40,0.09);
+  --green-bg:    #f0fdf4;
+  --green-border:#bbf7d0;
+  --text:        #111827;
+  --text-dim:    #374151;
+  --text-muted:  #9ca3af;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.07);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-orange: 0 2px 12px rgba(240,124,40,0.3), 0 1px 3px rgba(0,0,0,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--sans); background: var(--bg-gradient); color: var(--text);
+  min-height: 100vh; display: flex; justify-content: center;
+  font-size: 14px; line-height: 1.5; transition: background 0.3s, color 0.2s;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--bg-glow);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.022;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page { display: none; width: 100%; max-width: 480px; height: 100vh; flex-direction: column; position: relative; z-index: 1; }
+/* Subtle top-to-bottom gradient on the app column itself */
+.page.active {
+  display: flex;
+  overflow: hidden;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.025) 0%,
+    rgba(255,255,255,0.008) 25%,
+    transparent 60%);
+}
+[data-theme="light"] .page.active {
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.55) 0%,
+    rgba(255,255,255,0.25) 30%,
+    rgba(255,255,255,0.05) 70%,
+    transparent 100%);
+}
+
+/* ── APP SHELL SEPARATOR ── */
+#appShell {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  border-left:  1px solid rgba(255,255,255,0.07);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  box-shadow:
+    -32px 0 64px rgba(0,0,0,0.6),
+     32px 0 64px rgba(0,0,0,0.6),
+    inset 0 0 80px 0 rgba(255,255,255,0.008);
+  background:
+    radial-gradient(ellipse 65% 40% at 50% 0%,
+      rgba(240,124,40,0.08) 0%,
+      transparent 60%);
+}
+#appShell.visible { display: block; }
+
+[data-theme="light"] #appShell {
+  border-left:  1px solid rgba(0,0,0,0.10);
+  border-right: 1px solid rgba(0,0,0,0.10);
+  box-shadow:
+    -32px 0 64px rgba(0,0,0,0.10),
+     32px 0 64px rgba(0,0,0,0.10);
+  background:
+    radial-gradient(ellipse 65% 35% at 50% 0%,
+      rgba(240,124,40,0.05) 0%,
+      transparent 55%);
+}
+
+.auth-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.forgot-link { font-size: 11px; color: var(--orange); cursor: pointer; font-weight: 500; letter-spacing: 0.01em; transition: opacity 0.15s; }
+.forgot-link:hover { opacity: 0.75; text-decoration: underline; }
+
+/* Remember me toggle */
+.remember-row { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; padding: 2px 0; }
+.remember-checkbox { display: none; }
+.remember-track { width: 36px; height: 20px; background: var(--surface3); border: 1px solid var(--border2); border-radius: 20px; position: relative; flex-shrink: 0; transition: background 0.2s, border-color 0.2s; }
+.remember-thumb { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--text-muted); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
+.remember-checkbox:checked + .remember-track { background: var(--orange-grad); border-color: transparent; }
+.remember-checkbox:checked + .remember-track .remember-thumb { transform: translateX(16px); background: #fff; }
+.remember-label { font-size: 12px; color: var(--text-dim); }
+
+/* AUTH */
+.auth-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
+.auth-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.auth-logo-icon { width: 54px; height: 54px; background: var(--orange-grad); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: var(--shadow-orange); }
+.auth-logo-name { font-family: var(--logo); font-size: 26px; font-weight: 600; letter-spacing: 0.02em; }
+.auth-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-md); }
+.auth-title { font-size: 15px; font-weight: 700; }
+.auth-switch { font-size: 12px; color: var(--text-dim); text-align: center; }
+.auth-switch a { color: var(--orange); cursor: pointer; }
+.auth-switch a:hover { text-decoration: underline; }
+
+/* FORMS */
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.form-input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 13px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
+.form-input:focus { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(240,124,40,0.15); }
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:disabled { opacity: 0.45; cursor: not-allowed; }
+.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.form-error { font-size: 12px; color: var(--red); display: none; padding: 8px 10px; background: rgba(224,85,85,0.08); border: 1px solid rgba(224,85,85,0.2); border-radius: var(--r-sm); }
+.form-error.show { display: block; }
+
+/* BUTTONS */
+.btn { font-family: var(--sans); font-size: 13px; font-weight: 600; border-radius: var(--r-sm); padding: 10px 18px; cursor: pointer; border: 1px solid transparent; transition: filter 0.15s, transform 0.1s, box-shadow 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; position: relative; user-select: none; }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.btn-primary { background: var(--orange-grad); color: #fff; border: none; box-shadow: var(--shadow-orange); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 4px 18px rgba(240,124,40,0.35), 0 2px 6px rgba(0,0,0,0.4); }
+.btn-primary:active:not(:disabled) { filter: brightness(0.94); box-shadow: var(--shadow-orange); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.btn-secondary:hover:not(:disabled) { background: var(--surface3); border-color: var(--border2); }
+.btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+.btn-danger { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn-danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); background: rgba(224,85,85,0.06); }
+.btn-danger-solid { background: var(--red-grad); color: #fff; border: none; box-shadow: var(--shadow-red); }
+.btn-danger-solid:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 4px 18px rgba(217,69,69,0.35), 0 2px 6px rgba(0,0,0,0.4); }
+.btn-danger-solid:active:not(:disabled) { filter: brightness(0.94); box-shadow: var(--shadow-red); }
+.btn-toggle { background: var(--gray-grad); color: #fff; border: none; box-shadow: var(--shadow-gray); }
+.btn-toggle:hover:not(:disabled) { filter: brightness(1.12); box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35); }
+.btn-toggle:active:not(:disabled) { filter: brightness(0.94); box-shadow: var(--shadow-gray); }
+.btn-toggle.active { background: var(--orange-grad); box-shadow: var(--shadow-orange); }
+.btn-toggle.active:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 4px 18px rgba(240,124,40,0.35), 0 2px 6px rgba(0,0,0,0.4); }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 14px; font-size: 12px; }
+.btn.loading { pointer-events: none; }
+.btn.loading .btn-text { opacity: 0; }
+.btn.loading::after { content: ''; position: absolute; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+.btn-ghost.loading::after, .btn-danger.loading::after { border-color: rgba(0,0,0,0.12); border-top-color: var(--text-dim); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes timerPulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(61,214,140,0.0), var(--shadow-sm); } 50%{ box-shadow: 0 0 14px 2px rgba(61,214,140,0.07), var(--shadow-sm); } }
+@keyframes cardPop { 0%{ transform: scale(1); } 40%{ transform: scale(1.012); } 100%{ transform: scale(1); } }
+@keyframes deletePulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(224,85,85,0); } 50%{ box-shadow: 0 0 0 6px rgba(224,85,85,0.18); } }
+
+.icon-btn { width: 34px; height: 34px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: all 0.12s; flex-shrink: 0; user-select: none; }
+.icon-btn:hover { border-color: var(--orange); color: var(--orange); background: var(--surface3); }
+.icon-btn:active { transform: scale(0.92); }
+
+/* HEADER */
+.app-header { padding: 13px 18px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(17,19,22,0.85); border-radius: var(--r); margin: 8px 8px 0; }
+[data-theme="light"] .app-header { background: rgba(255,255,255,0.88); }
+[data-theme="light"] .app-logo-full .st0 { fill: #1a1c20; }
+[data-theme="light"] .app-logo-full .st1 { fill: #cf6019; }
+.app-logo { width: 32px; height: 32px; background: var(--orange-grad); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: var(--shadow-orange); }
+.app-logo-svg { width: 60%; height: 60%; color: #fff; display: block; }
+.auth-logo-icon .app-logo-svg { width: 56%; height: 56%; }
+.offline-indicator { display: none; align-items: center; justify-content: center; width: 18px; height: 18px; margin-left: 4px; color: var(--orange); cursor: help; opacity: 0.85; }
+.offline-indicator.show { display: inline-flex; }
+.offline-indicator svg { width: 100%; height: 100%; animation: offline-spin 4.5s linear infinite; transform-origin: center; }
+.offline-indicator:hover { opacity: 1; }
+@keyframes offline-spin { to { transform: rotate(360deg); } }
+.app-name { font-family: var(--logo); font-size: 17px; font-weight: 600; letter-spacing: 0.02em; }
+.app-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; border-radius: var(--r-sm); padding: 4px; margin: -4px; transition: opacity 0.15s; user-select: none; }
+.app-brand:hover { opacity: 0.75; }
+.app-logo-full { height: 31px; width: auto; display: block; }
+.hspace { flex: 1; }
+.header-actions { display: flex; gap: 6px; align-items: center; }
+.theme-btn { width: 34px; height: 34px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.12s; user-select: none; color: var(--text); }
+.theme-btn:hover { border-color: var(--orange); background: var(--surface3); color: var(--orange); }
+.theme-btn:active { transform: scale(0.92); }
+
+/* BURGER BUTTON */
+.burger-btn { width: 34px; height: 34px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0; transition: all 0.12s; flex-shrink: 0; }
+.burger-btn:hover { border-color: var(--orange); background: var(--surface3); }
+.burger-btn:active { transform: scale(0.92); }
+.burger-line { display: block; width: 14px; height: 2px; background: var(--text-dim); border-radius: 2px; transition: background 0.12s; }
+.burger-btn:hover .burger-line { background: var(--orange); }
+
+/* DRAWER OVERLAY */
+.drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 150; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+.drawer-overlay.show { display: block; }
+
+/* DRAWER */
+.drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 240px; border-left: 1px solid var(--border); z-index: 160; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); box-shadow: -12px 0 40px rgba(0,0,0,0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); background: rgba(17,19,22,0.92); }
+[data-theme="light"] .drawer { background: rgba(255,255,255,0.94); }
+.drawer.open { transform: translateX(0); }
+.drawer-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.drawer-logo { display: flex; align-items: center; gap: 8px; }
+.drawer-close { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.12s, background 0.12s; line-height: 1; }
+.drawer-close:hover { color: var(--text); background: var(--surface2); }
+.drawer-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px; display: flex; flex-direction: column; gap: 1px; }
+.drawer-item { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; transition: background 0.12s, color 0.12s; user-select: none; letter-spacing: 0.01em; }
+.drawer-item:hover { background: var(--surface2); color: var(--text); }
+.drawer-item.active { background: var(--orange-dim); color: var(--orange); }
+.drawer-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.drawer-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.drawer-footer { flex-shrink: 0; padding: 10px 8px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
+.drawer-action { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: var(--r-sm); font-size: 13px; font-weight: 500; color: var(--text-dim); cursor: pointer; transition: background 0.12s, color 0.12s; background: none; border: none; width: 100%; text-align: left; font-family: var(--sans); }
+.drawer-action:hover { background: var(--surface2); color: var(--text); }
+.drawer-action-danger:hover { background: rgba(224,85,85,0.08); color: var(--red); }
+
+/* TIMER TAB */
+.timer-actions { padding: 12px 18px 8px; display: flex; gap: 8px; }
+.inline-form { display: none; padding: 0 18px 10px; flex-direction: column; gap: 8px; }
+.inline-form.show { display: flex; }
+.inline-form-row { display: flex; gap: 8px; align-items: center; }
+.inline-input { flex: 1; background: var(--surface); border: 1px solid var(--orange); border-radius: var(--r-sm); padding: 9px 12px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: box-shadow 0.15s; }
+.inline-input:focus { box-shadow: 0 0 0 2px rgba(240,124,40,0.2); }
+.inline-input::placeholder { color: var(--text-muted); }
+
+/* TASK LIST */
+.task-list { flex: 1; padding: 6px 18px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+.empty-state { padding: 48px 0; text-align: center; color: var(--text-muted); font-size: 13px; line-height: 1.9; }
+.task-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; cursor: default; user-select: none; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; animation: fadeUp 0.18s ease both; box-shadow: var(--shadow-sm); }
+@keyframes fadeUp { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:none; } }
+.task-card:hover { border-color: var(--border2); box-shadow: var(--shadow-md); }
+.task-card.active-task { background: var(--green-bg); border-color: var(--green-border); box-shadow: 0 0 0 1px rgba(61,214,140,0.12), var(--shadow-sm); animation: fadeUp 0.18s ease both, timerPulse 4s ease-in-out infinite; }
+.task-card.dragging { opacity: 0.3; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.task-card.drag-over { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
+.task-card-top { display: flex; align-items: center; gap: 10px; }
+.drag-handle { color: var(--text-muted); cursor: grab; font-size: 12px; padding: 2px 0; line-height: 1; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+.task-card:hover .drag-handle { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
+.task-info { flex: 1; min-width: 0; }
+.task-name { font-size: 12px; font-weight: 400; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; line-height: 1.3; letter-spacing: 0.01em; }
+.pending-badge { display: inline-block; margin-left: 7px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange); background: var(--orange-dim); border: 1px solid rgba(240,124,40,0.35); border-radius: 4px; vertical-align: middle; }
+.task-name-edit { background: transparent; border: none; border-bottom: 1px solid var(--orange); outline: none; font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); width: 100%; padding: 0 0 1px; }
+.task-time { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--orange); margin-top: 1px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.03em; flex-wrap: wrap; }
+.task-budget-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); font-weight: 400; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: blink 3s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
+.task-controls { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.ctrl { width: 30px; height: 30px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
+.ctrl:active { transform: scale(0.88); }
+.ctrl:hover { border-color: var(--border2); color: var(--text); }
+.ctrl.pp { background: var(--surface3); color: var(--text); }
+.ctrl.pp.running { background: var(--orange-grad); border-color: transparent; color: #fff; box-shadow: var(--shadow-orange); }
+.ctrl.pp:hover:not(.running) { border-color: var(--orange); color: var(--orange); }
+.ctrl.pp.running:hover { filter: brightness(1.1); }
+.ctrl.budget-btn { color: var(--text-muted); }
+.ctrl.budget-btn:hover { border-color: var(--orange); color: var(--orange); }
+.ctrl.budget-btn.budget-active { color: var(--orange); border-color: rgba(240,124,40,0.4); background: var(--orange-dim); }
+.ctrl.budget-btn.budget-active:hover { border-color: var(--orange); background: rgba(240,124,40,0.22); }
+.ctrl.del:hover { border-color: var(--red); color: var(--red); background: rgba(224,85,85,0.06); }
+.ctrl.pin-btn { color: var(--text-muted); }
+.ctrl.pin-btn:hover { border-color: var(--orange); color: var(--orange); }
+.ctrl.pin-btn.pinned { display: flex; color: var(--orange); border-color: rgba(240,124,40,0.4); background: var(--orange-dim); }
+.ctrl.pin-btn.pinned:hover { border-color: var(--orange); background: rgba(240,124,40,0.22); }
+
+/* SELECTION MODE */
+.task-checkbox { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2); background: var(--surface2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.12s; cursor: pointer; }
+.task-checkbox.checked { background: var(--orange); border-color: var(--orange); }
+.task-checkbox.checked::after { content: ''; width: 10px; height: 7px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(0px, -1px); display: block; }
+.task-card.in-selection { cursor: pointer; }
+.task-card.in-selection.bulk-selected { background: var(--orange-dim); border-color: rgba(240,124,40,0.35); }
+.task-card.in-selection.is-pinned { cursor: default; opacity: 0.55; }
+.task-card.in-selection.is-pinned .ctrl.pin-btn { cursor: pointer; opacity: 1; }
+.task-checkbox.pinned-placeholder { border-color: transparent; background: transparent; cursor: default; }
+.bulk-bar { display: none; position: sticky; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 18px; gap: 8px; align-items: center; z-index: 10; }
+.bulk-bar.show { display: flex; }
+.bulk-bar-count { font-size: 13px; color: var(--text-dim); flex: 1; }
+
+/* BUDGET PROGRESS BAR */
+.budget-bar-wrap { width: 100%; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.budget-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease, background-color 0.5s ease; min-width: 2px; }
+
+/* BOTTOM */
+.bottom-area { padding: 10px 18px 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.total-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.total-label { font-size: 13px; font-weight: 500; color: var(--text-dim); flex: 1; }
+.total-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--orange); letter-spacing: 0.03em; }
+.end-day-btn { background: var(--orange-grad); border: none; border-radius: var(--r); padding: 13px; font-family: var(--sans); font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; width: 100%; transition: filter 0.15s, transform 0.1s, box-shadow 0.15s; letter-spacing: 0.02em; position: relative; user-select: none; box-shadow: var(--shadow-orange); }
+.end-day-btn:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 4px 20px rgba(240,124,40,0.4); }
+.end-day-btn:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.99); }
+.end-day-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.end-day-btn.loading { pointer-events: none; color: transparent; }
+.end-day-btn.loading::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+.goal-row { display: flex; gap: 5px; padding-bottom: 10px; }
+.goal-pill { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; text-align: center; }
+.goal-pill-label { font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); }
+.goal-pill-value { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--orange); margin-top: 2px; }
+.goal-pill-value.at-goal { color: var(--green); }
+.goal-pill-btn { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.goal-pill-btn:hover { border-color: var(--orange); background: var(--orange-dim); }
+.goal-pill-btn:active { transform: scale(0.97); }
+
+/* WEEK TAB */
+.week-content { flex: 1; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.week-nav { display: flex; align-items: center; gap: 8px; }
+.week-nav-label { flex: 1; text-align: center; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.05em; text-transform: uppercase; }
+.day-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.day-header { padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.day-header.today-hdr { border-left: 3px solid var(--orange); }
+.day-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.day-date { font-size: 11px; color: var(--text-muted); }
+.day-total { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--orange); }
+.day-add-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 2px 6px; transition: color 0.12s; line-height: 1; border-radius: 4px; }
+.day-add-btn:hover { color: var(--orange); background: var(--orange-dim); }
+.day-entries { padding: 3px 6px; }
+.week-entry { display: flex; align-items: center; gap: 8px; padding: 7px; border-radius: var(--r-sm); transition: background 0.1s; cursor: pointer; }
+.week-entry:hover { background: var(--surface2); }
+.week-entry:hover .we-del { opacity: 1; }
+.we-copy { opacity: 0; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 5px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; transition: opacity 0.12s, color 0.12s, background 0.12s; }
+.week-entry:hover .we-copy { opacity: 1; }
+.we-copy:hover { color: var(--orange); background: var(--orange-dim); }
+.week-entry.copied { background: rgba(61,214,140,0.08); border-radius: var(--r-sm); }
+.week-entry.copied .we-task { color: var(--green); }
+.week-entry.copied .we-copy { opacity: 1; color: var(--green); }
+.week-entry.copied:hover { background: rgba(61,214,140,0.12); }
+.we-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; }
+.we-body { flex: 1; min-width: 0; }
+.we-task { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.we-meta { font-family: var(--mono); font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+.we-dur { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--orange); flex-shrink: 0; }
+.we-del { opacity: 0; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: color 0.12s, opacity 0.15s; flex-shrink: 0; padding: 3px 5px; border-radius: 4px; }
+.we-del:hover { color: var(--red); background: rgba(224,85,85,0.1); }
+.week-empty { font-size: 11px; color: var(--text-muted); padding: 10px 8px; font-style: italic; }
+.week-summary-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+.ws-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+.ws-value { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--orange); }
+.skel { background: var(--surface2); border-radius: 4px; animation: shimmer 1.4s infinite; }
+@keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
+/* SETTINGS */
+.settings-content { flex: 1; padding: 14px 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); }
+.settings-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); }
+.settings-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.settings-row { display: flex; gap: 10px; }
+.color-input { width: 100%; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--border); cursor: pointer; padding: 3px; background: var(--surface2); }
+.color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-input::-webkit-color-swatch { border-radius: 5px; border: none; }
+.gradient-preview { width: 100%; height: 48px; border-radius: var(--r-sm); border: 1px solid var(--border); transition: background 0.3s; }
+
+/* MODAL */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.overlay.show { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 14px; animation: modalIn 0.17s ease both; }
+@keyframes modalIn { from { opacity:0; transform:scale(.95) translateY(4px); } to { opacity:1; transform:none; } }
+.modal-title { font-size: 15px; font-weight: 700; }
+.modal-subtitle { font-size: 12px; color: var(--text-dim); margin-top: -8px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+.modal-actions .btn { flex: 1; }
+.end-day-list { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); max-height: 220px; overflow-y: auto; }
+.edl-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--border); gap: 8px; }
+.edl-row:last-child { border-bottom: none; }
+.edl-task { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edl-time { font-family: var(--mono); font-size: 12px; color: var(--orange); flex-shrink: 0; font-weight: 600; }
+
+/* EDIT TIME MODAL */
+.time-inputs { display: flex; gap: 10px; }
+.time-inp-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.time-inp-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.time-inp { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 8px; font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--text); text-align: center; outline: none; width: 100%; transition: border-color 0.15s; }
+.time-inp:focus { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(240,124,40,0.15); }
+
+/* CONFIRM DIALOG */
+.confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+.confirm-overlay.show { display: flex; }
+.confirm-box { background: var(--surface); border: 1px solid rgba(224,85,85,0.3); border-radius: 14px; padding: 22px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 14px; animation: modalIn 0.17s ease both, deletePulse 1.4s ease-in-out infinite; }
+.confirm-title { font-size: 15px; font-weight: 700; }
+.confirm-msg { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.confirm-actions { display: flex; gap: 8px; }
+.confirm-actions .btn { flex: 1; }
+
+/* FOOTER */
+footer { padding: 10px 18px 14px; text-align: center; font-size: 10px; color: var(--text-muted); letter-spacing: 0.03em; border-top: 1px solid var(--border); margin-top: auto; }
+footer a { color: var(--text-muted); text-decoration: none; }
+footer a:hover { color: var(--text-dim); }
+
+.task-card.selected { outline: 2px solid var(--orange); outline-offset: -1px; }
+.task-card.pop { animation: cardPop 0.25s ease both; }
+
+/* SHORTCUTS MODAL */
+.shortcuts-grid { display: flex; flex-direction: column; gap: 10px; }
+.shortcut-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.shortcut-desc { font-size: 13px; color: var(--text-dim); }
+.shortcut-keys { display: flex; gap: 4px; flex-shrink: 0; }
+.kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 24px; padding: 0 6px; background: var(--surface3); border: 1px solid var(--border2); border-radius: 5px; font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; box-shadow: 0 1px 0 var(--border2); }
+
+/* ── BOX (NOTES) ── */
+.box-toolbar { padding: 12px 18px 8px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.box-search-wrap { flex: 1; position: relative; display: flex; align-items: center; }
+.box-search-icon { position: absolute; left: 10px; width: 15px; height: 15px; stroke: var(--text-muted); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.box-search { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 32px 8px 32px; font-family: var(--sans); font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.box-search:focus { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(240,124,40,0.13); }
+.box-search::placeholder { color: var(--text-muted); }
+.box-search-clear { position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 4px; display: none; transition: color 0.12s; }
+.box-search-clear.show { display: block; }
+.box-search-clear:hover { color: var(--text); }
+
+.box-grid { flex: 1; overflow-y: auto; padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 8px; align-content: start; }
+.box-empty { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0 40px; color: var(--text-muted); font-size: 13px; line-height: 1.8; text-align: center; }
+
+/* Note card — full width, matches task-card style */
+.note-card {
+  border-radius: var(--r);
+  padding: 13px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  animation: fadeUp 0.15s ease both;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.note-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border2);
+}
+.note-card-accent {
+  width: 3px;
+  min-height: 36px;
+  align-self: stretch;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: var(--border2);
+  margin-top: 1px;
+  transition: opacity 0.2s;
+}
+.note-card:hover .note-card-accent { opacity: 0.7; }
+.note-card-body { flex: 1; min-width: 0; }
+.note-card.pinned .note-card-accent { position: relative; }
+.note-card.pinned .note-card-accent::after {
+  content: '';
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 6px; height: 6px;
+  background: var(--orange);
+  border-radius: 50%;
+}
+
+/* Note color themes */
+.note-card.color-default { background: var(--surface2); border-color: var(--border); }
+.note-card.color-red     { background: rgba(220,60,60,0.18);    border-color: rgba(220,60,60,0.3); }
+.note-card.color-orange  { background: rgba(240,124,40,0.16);   border-color: rgba(240,124,40,0.28); }
+.note-card.color-green   { background: rgba(50,200,120,0.15);   border-color: rgba(50,200,120,0.28); }
+.note-card.color-blue    { background: rgba(60,130,240,0.16);   border-color: rgba(60,130,240,0.28); }
+.note-card.color-purple  { background: rgba(150,80,240,0.16);   border-color: rgba(150,80,240,0.28); }
+
+.note-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.35; word-break: break-word; margin-bottom: 4px; }
+.note-preview {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.note-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.note-date { font-size: 10px; color: var(--text-muted); letter-spacing: 0.02em; }
+
+/* Note color accent bar */
+.note-card.color-default .note-card-accent { background: var(--border2); }
+.note-card.color-red     .note-card-accent { background: rgba(220,60,60,0.7); }
+.note-card.color-orange  .note-card-accent { background: rgba(240,124,40,0.8); }
+.note-card.color-green   .note-card-accent { background: rgba(50,200,120,0.7); }
+.note-card.color-blue    .note-card-accent { background: rgba(60,130,240,0.7); }
+.note-card.color-purple  .note-card-accent { background: rgba(150,80,240,0.7); }
+.note-card.color-red    .note-title { color: #ff8080; }
+.note-card.color-orange .note-title { color: var(--orange-light); }
+.note-card.color-green  .note-title { color: #5fe8a0; }
+.note-card.color-blue   .note-title { color: #7eb8ff; }
+.note-card.color-purple .note-title { color: #c49dff; }
+
+/* Note editor overlay */
+.note-editor-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.note-editor-overlay.show { display: flex; }
+.note-editor { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: fit-content; min-width: 320px; max-width: min(720px, calc(100vw - 40px)); display: flex; flex-direction: column; gap: 0; overflow: hidden; animation: modalIn 0.17s ease both; max-height: 90vh; }
+.note-editor-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; border-bottom: 1px solid var(--border); gap: 8px; }
+.note-editor-title-input { flex: 1; background: none; border: none; outline: none; font-family: var(--sans); font-size: 16px; font-weight: 700; color: var(--text); min-width: 0; width: 100%; }
+.note-editor-title-input::placeholder { color: var(--text-muted); }
+.note-editor-close { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 6px; line-height: 1; transition: color 0.12s, background 0.12s; }
+.note-editor-close:hover { color: var(--text); background: var(--surface2); }
+.note-editor-body { flex: 1; overflow-y: auto; }
+.note-editor-content { width: 100%; min-width: 280px; min-height: 180px; background: none; border: none; outline: none; resize: horizontal; font-family: var(--sans); font-size: 14px; color: var(--text); line-height: 1.65; padding: 14px 16px; }
+.note-editor-content::placeholder { color: var(--text-muted); }
+.note-editor-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.note-color-picker { display: flex; gap: 6px; align-items: center; }
+.note-color-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.12s, border-color 0.12s; flex-shrink: 0; }
+.note-color-dot:hover { transform: scale(1.15); }
+.note-color-dot.active { border-color: rgba(255,255,255,0.8); transform: scale(1.15); }
+.note-color-dot.dc-default { background: var(--surface3); }
+.note-color-dot.dc-red     { background: #e04444; }
+.note-color-dot.dc-orange  { background: #f07c28; }
+.note-color-dot.dc-green   { background: #32c878; }
+.note-color-dot.dc-blue    { background: #3c82f0; }
+.note-color-dot.dc-purple  { background: #9650f0; }
+.note-editor-actions { display: flex; gap: 8px; align-items: center; }
+.note-card-delete {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  align-self: center;
+}
+.note-card:hover .note-card-delete { opacity: 1; }
+.note-card-delete:hover { color: var(--red); background: rgba(224,85,85,0.1); }
+.note-card-delete:active { transform: scale(0.9); }
+
+/* OFFLINE BANNER */
+.offline-banner { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #1a1208; border-top: 1px solid rgba(240,124,40,0.3); padding: 8px 18px; font-size: 12px; color: var(--orange); text-align: center; z-index: 500; letter-spacing: 0.02em; }
+.offline-banner.show { display: block; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r-sm); padding: 9px 16px; font-size: 13px; color: var(--text); z-index: 999; opacity: 0; transition: opacity 0.2s, transform 0.2s; white-space: nowrap; pointer-events: none; max-width: calc(100vw - 40px); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok   { border-color: var(--green-border); color: var(--green); background: #0d1f14; }
+.toast.err  { border-color: rgba(224,85,85,0.4); color: var(--red); background: #1a0f0f; }
+.toast.warn { border-color: rgba(240,124,40,0.4); color: var(--orange); background: #1a1208; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── BACKGROUND IMAGE MODE ── */
+.has-bg-image .task-card {
+  background: rgba(17,19,22,0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+[data-theme="light"] .has-bg-image .task-card {
+  background: rgba(255,255,255,0.76);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.has-bg-image .task-card.active-task {
+  background: rgba(12,31,20,0.78);
+}
+[data-theme="light"] .has-bg-image .task-card.active-task {
+  background: rgba(235,253,240,0.76);
+}
+.has-bg-image .app-header {
+  background: rgba(17,19,22,0.76) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+[data-theme="light"] .has-bg-image .app-header {
+  background: rgba(255,255,255,0.80) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* ── BG IMAGE GALLERY ── */
+.bg-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 2px; }
+.bg-img-item { position: relative; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.12s; }
+.bg-img-item:hover { border-color: var(--border2); transform: scale(1.03); }
+.bg-img-item.active { border-color: var(--orange); }
+.bg-img-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bg-img-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 4px; width: 18px; height: 18px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; padding: 0; line-height: 1; }
+.bg-img-item:hover .bg-img-del { opacity: 1; }
+.bg-img-none { border: 1.5px dashed var(--border2); background: var(--surface2); aspect-ratio: 16/9; border-radius: var(--r-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; color: var(--text-muted); gap: 3px; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+.bg-img-none:hover { border-color: var(--border2); color: var(--text-dim); }
+.bg-img-none.active { border-color: var(--orange); color: var(--orange); border-style: solid; background: var(--orange-dim); }
+.bg-img-none svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── OVERLAY PICKER ── */
+.bg-overlay-picker { display: flex; gap: 8px; margin-bottom: 4px; }
+.bg-overlay-opt { flex: 1; border: 1.5px solid var(--border); border-radius: var(--r-sm); padding: 7px 4px 5px; cursor: pointer; background: var(--surface2); display: flex; flex-direction: column; align-items: center; gap: 5px; transition: border-color 0.15s; }
+.bg-overlay-opt:hover { border-color: var(--border2); }
+.bg-overlay-opt.active { border-color: var(--orange); background: var(--orange-dim); }
+.bg-overlay-preview { width: 100%; height: 30px; border-radius: 4px; background-color: #4e6a7a; }
+.bg-overlay-preview.overlay-dots-sm { background-image: radial-gradient(circle, rgba(0,0,0,0.55) 1px, transparent 1px); background-size: 5px 5px; }
+.bg-overlay-preview.overlay-dots-md { background-image: radial-gradient(circle, rgba(0,0,0,0.55) 1.5px, transparent 1.5px); background-size: 10px 10px; }
+.bg-overlay-preview.overlay-dots-lg { background-image: radial-gradient(circle, rgba(0,0,0,0.55) 2px, transparent 2px); background-size: 16px 16px; }
+.bg-overlay-opt span { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+.bg-overlay-opt.active span { color: var(--orange); }
+</style>
+</head>
+<body>
+<div id="appShell"></div>
+
+<!-- DRAWER OVERLAY — in body, never clipped by page overflow:hidden -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<!-- DRAWER — in body, position:fixed works correctly -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-logo">
+      <svg class="app-logo-full" viewBox="0 0 137.49 67.09" xmlns="http://www.w3.org/2000/svg" aria-label="TaskTimer"><defs><style>.st0{fill:#fff}.st1{fill:#cf6019}</style></defs><path class="st0" d="M31.54,62.44h-1.19c-1.46,0-2.93-.12-4.36-.37l-.76-.14-.72-.15h0c-2.79-.57-5.47-1.6-7.91-3.02l-.05-.05-.07-.04c-1.29-.84-2.45-1.73-3.44-2.68C3.81,47.44,1.96,33.47,8.6,22.8c4.77-7.67,13.33-12.43,22.37-12.43h.79c.16-.01.39-.04.65-.14h.05l.11-.08.15-.08.08-.07c.75-.57.85-1.6.85-2.63.01-2.91.03-3.89-.61-4.54-.28-.28-.64-.43-1.08-.43l-4.23.05c-1.37.03-2.51,1.18-2.53,2.62l.03,1.21c-2.63.49-5.2,1.33-7.67,2.51-2.09,1-4.02,2.21-5.75,3.56-2.02,1.45-5.45,5.56-5.6,5.73l-.07.08v.03c-.37.47-.68.95-.98,1.42l-.46-.23c-.56-.27-1.11-.53-1.75-.53-1.03,0-1.87.66-2.47,1.98-1.15,2.56-.09,3.47,1.23,4.07l.19.08.3.16h0c-4.7,11.73-1.68,25.43,7.57,34.12.98.87,2.03,1.68,3.24,2.49.69.46,1.44.91,2.3,1.4,2.45,1.36,5.14,2.38,7.97,3.06l.72.16.92.15c1.52.28,3.13.57,4.76.57.6,0,1.18-.04,1.71-.11.11,0,.19-.01.28-.01,1.3-.05,1.86-.75,1.86-2.3,0-1.98-1.25-2.28-1.99-2.28v.05Z"/><path class="st0" d="M13.01,29.77l3.54,1.95c.35.19.77.43,1.31.43,1.18,0,1.76-1.12,1.95-1.49.98-1.92.07-2.72-.83-3.21l-3.47-1.9c-.33-.18-.81-.45-1.4-.45-.8,0-1.46.49-1.95,1.44-1,1.96-.08,2.76.84,3.23Z"/><path class="st0" d="M31.59,15.67h0c-2.21.04-2.47,1.23-2.45,2.28l-.05,4.04c0,.47-.03,1.21.53,1.76.54.56,1.31.62,1.86.62h.09c2.15-.04,2.44-1.22,2.45-2.24l.04-3.96c0-.47.01-1.27-.57-1.87-.42-.42-1-.62-1.88-.62h-.01Z"/><path class="st0" d="M14.6,49.8c.54,0,.95-.26,1.25-.45l3.4-2.06c.07-.04.14-.08.2-.11.35-.19.92-.49,1.12-1.19.2-.75-.15-1.49-.5-2.06-.37-.6-.95-1.4-1.94-1.4-.56,0-.96.26-1.29.46l-3.51,2.11c-.41.24-1.03.61-1.21,1.4-.18.77.22,1.49.53,1.96.42.62,1.02,1.34,1.94,1.34h0Z"/><path class="st1" d="M73.64,0c-1.83.28-5.3,1.44-7.1,2.11-24.89,9.32-30.87,35.95-30.77,44.12l-6.78-10.64c-2.64-.8-5.88,2.18-4.86,4.27,3.05,6.29,11.59,18.06,12.34,18.93.5.57,4.4.38,4.54-.04.07-.22-2.54-34.32,22.18-49.09,3.43-2.05,8.94-3.58,11.44-4.53,1.4-.53-.11-5.28-1-5.14h.01Z"/><g><path class="st0" d="M59.91,40.84h-6.83v17.82h-6.08v-17.82h-6.83v-5.72h19.75v5.72Z"/><path class="st0" d="M66.85,58.66h-6.08v-23.54h6.08v23.54Z"/><path class="st0" d="M70.51,35.12h6.73l5.51,14.53h.07l5.51-14.53h6.73l2.18,23.54h-6.15l-.75-8.01-.14-6.62-.07-.36-4.54,14.31h-5.55l-4.58-13.99-.07-.36-.14,7.01-.75,8.01h-6.15l2.18-23.54Z"/><path class="st0" d="M115.38,58.66h-18.17v-23.54h18v5.58h-11.91v3.47h11.41v5.37h-11.41v3.54h12.09v5.58Z"/><path class="st0" d="M116.59,58.66v-23.54h11.23c1.5,0,2.82.21,3.95.63,1.13.42,2.07.98,2.81,1.7.74.72,1.29,1.55,1.66,2.5.37.95.55,1.97.55,3.04,0,1.43-.42,2.73-1.27,3.88s-1.95,2.06-3.31,2.7l5.26,9.09h-6.69l-4.4-8.12h-3.72v8.12h-6.08ZM127.83,40.84h-5.15v4.47h5.15c.4,0,.79-.04,1.14-.11.36-.07.67-.2.93-.38s.47-.41.61-.7c.14-.29.21-.64.21-1.07s-.07-.78-.21-1.06c-.14-.27-.35-.5-.61-.68s-.57-.3-.93-.38-.74-.11-1.14-.11Z"/></g><path class="st0" d="M78.66,6.65h6.98l8.77,23.54h-6.65l-1.4-3.76h-8.41l-1.4,3.76h-6.65l8.77-23.54ZM79.77,21.43h4.76l-2.33-7.76h-.07l-2.36,7.76Z"/><path class="st0" d="M106.29,13.27c-.29-.26-.63-.51-1.02-.73s-.82-.42-1.27-.59c-.45-.17-.91-.3-1.38-.39-.47-.1-.91-.14-1.34-.14-.84,0-1.46.15-1.88.45-.42.3-.63.72-.63,1.27,0,.24.05.46.16.66.11.2.26.39.46.55.2.17.45.32.73.47.29.14.6.27.93.39.88.31,1.89.63,3.02.95,1.13.32,2.2.76,3.2,1.31,1,.55,1.85,1.26,2.54,2.13.69.87,1.04,2.02,1.04,3.45,0,1.15-.23,2.19-.7,3.13-.47.94-1.12,1.74-1.97,2.4-.85.66-1.87,1.16-3.06,1.52-1.19.36-2.53.54-4.01.54-.93,0-1.87-.09-2.81-.27-.94-.18-1.84-.43-2.7-.75s-1.66-.71-2.4-1.16c-.74-.45-1.38-.97-1.93-1.54l3.47-4.04c.33.33.75.65,1.25.95.5.3,1.04.55,1.61.77s1.17.38,1.79.5c.62.12,1.22.18,1.79.18s1.03-.04,1.43-.11c.4-.07.74-.19,1-.36.26-.17.47-.37.61-.61.14-.24.21-.51.21-.82s-.08-.58-.25-.82c-.17-.24-.41-.45-.72-.64-.31-.19-.67-.36-1.09-.52-.42-.16-.86-.3-1.34-.45-.91-.26-1.87-.55-2.9-.88-1.03-.32-1.97-.76-2.84-1.31-.87-.55-1.59-1.24-2.16-2.07-.57-.84-.86-1.88-.86-3.15,0-1.15.21-2.18.64-3.09.43-.92,1.04-1.7,1.82-2.34.79-.64,1.74-1.15,2.86-1.5,1.12-.36,2.37-.54,3.76-.54.86,0,1.71.08,2.56.23s1.65.38,2.4.66c.75.29,1.44.62,2.06,1,.62.38,1.12.81,1.5,1.29l-3.61,4.04Z"/><path class="st0" d="M117.52,30.19h-6.08V6.65h6.08v8.69h2.33l5.94-8.69h7.26l-8.19,11.45,8.77,12.09h-7.26l-6.48-9.34h-2.36v9.34Z"/><path class="st0" d="M60.77,12.38v17.82h6.08V12.38h12.83v-5.72h-6.34c-8.71,2.47-12.58,5.72-12.58,5.72Z"/></svg>
+    </div>
+    <button class="drawer-close" id="drawerCloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <nav class="drawer-nav">
+    <div class="drawer-item active" data-tab="timer">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><polyline points="12 10 12 13 14 15"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="12" y1="2" x2="12" y2="6"/></svg></span> Timer
+    </div>
+    <div class="drawer-item" data-tab="week">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></span> Week
+    </div>
+    <div class="drawer-item" data-tab="box">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span> Box
+    </div>
+    <div class="drawer-item" data-tab="settings">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Settings
+    </div>
+    <div class="drawer-item" id="shortcutsDrawerBtn">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><line x1="6" y1="14" x2="6" y2="14"/><line x1="18" y1="14" x2="18" y2="14"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span> Keyboard shortcuts
+    </div>
+    <div class="drawer-item" id="exportDrawerBtn">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Export rapport
+    </div>
+    <div class="drawer-item" data-tab="gradient">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> Baggrund
+    </div>
+  </nav>
+  <div class="drawer-footer">
+    <button class="drawer-action" id="drawerThemeBtn">
+      <span class="drawer-icon" id="drawerThemeIcon">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span> Toggle theme
+    </button>
+    <button class="drawer-action drawer-action-danger" id="drawerLogoutBtn">
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Sign out
+    </button>
+  </div>
+</div>
+
+<!-- AUTH PAGE -->
+<div class="page active" id="authPage">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><svg class="app-logo-svg" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M960 0c529.694 0 960 430.306 960 960s-430.306 960-960 960S0 1489.694 0 960c0-172.8 46.306-342.212 134.4-489.035l35.012-58.73 29.364 25.977L633.6 873.035A311.165 311.165 0 0 0 621.176 960c0 186.353 152.471 338.824 338.824 338.824S1298.824 1146.353 1298.824 960 1146.353 621.176 960 621.176c-19.2 0-38.4 2.26-56.47 5.648V0ZM322.334 242.372 845.93 766.08c33.657-19.765 72.283-31.962 114.071-31.962 124.574 0 225.882 101.308 225.882 225.882S1084.574 1185.882 960 1185.882 734.118 1084.574 734.118 960c0-41.788 12.197-80.414 31.962-114.07L242.372 322.333l79.962-79.962Z"/></svg></div>
+      <div class="auth-logo-name">TaskTimer</div>
+    </div>
+    <div class="auth-card" id="loginCard">
+      <div class="auth-title">Sign in</div>
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="loginEmail" type="email" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="form-field">
+        <div class="auth-label-row">
+          <label class="form-label">Password</label>
+          <a class="forgot-link" id="forgotPasswordLink">Forgot password?</a>
+        </div>
+        <input class="form-input" id="loginPassword" type="password" placeholder="••••••" autocomplete="current-password" />
+      </div>
+      <label class="remember-row">
+        <input type="checkbox" id="rememberMe" class="remember-checkbox" />
+        <span class="remember-track"><span class="remember-thumb"></span></span>
+        <span class="remember-label">Remember me for 30 days</span>
+      </label>
+      <div class="form-error" id="loginError"></div>
+      <button class="btn btn-primary btn-full" id="loginBtn"><span class="btn-text">Sign in</span></button>
+      <div class="auth-switch">New user? <a id="toRegisterLink">Create account</a></div>
+    </div>
+    <div class="auth-card" id="registerCard" style="display:none">
+      <div class="auth-title">Create account</div>
+      <div class="form-field">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="regName" type="text" placeholder="Your name" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="regEmail" type="email" placeholder="your@email.com" autocomplete="email" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="regPassword" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+      </div>
+      <div class="form-error" id="regError"></div>
+      <button class="btn btn-primary btn-full" id="regBtn"><span class="btn-text">Create account</span></button>
+      <div class="auth-switch">Already have an account? <a id="toLoginLink">Sign in</a></div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+</div>
+
+<!-- APP PAGE -->
+<div class="page" id="appPage">
+  <div class="app-header">
+    <div class="app-brand" id="appBrand" title="Back to timer">
+      <svg class="app-logo-full" viewBox="0 0 137.49 67.09" xmlns="http://www.w3.org/2000/svg" aria-label="TaskTimer"><defs><style>.st0{fill:#fff}.st1{fill:#cf6019}</style></defs><path class="st0" d="M31.54,62.44h-1.19c-1.46,0-2.93-.12-4.36-.37l-.76-.14-.72-.15h0c-2.79-.57-5.47-1.6-7.91-3.02l-.05-.05-.07-.04c-1.29-.84-2.45-1.73-3.44-2.68C3.81,47.44,1.96,33.47,8.6,22.8c4.77-7.67,13.33-12.43,22.37-12.43h.79c.16-.01.39-.04.65-.14h.05l.11-.08.15-.08.08-.07c.75-.57.85-1.6.85-2.63.01-2.91.03-3.89-.61-4.54-.28-.28-.64-.43-1.08-.43l-4.23.05c-1.37.03-2.51,1.18-2.53,2.62l.03,1.21c-2.63.49-5.2,1.33-7.67,2.51-2.09,1-4.02,2.21-5.75,3.56-2.02,1.45-5.45,5.56-5.6,5.73l-.07.08v.03c-.37.47-.68.95-.98,1.42l-.46-.23c-.56-.27-1.11-.53-1.75-.53-1.03,0-1.87.66-2.47,1.98-1.15,2.56-.09,3.47,1.23,4.07l.19.08.3.16h0c-4.7,11.73-1.68,25.43,7.57,34.12.98.87,2.03,1.68,3.24,2.49.69.46,1.44.91,2.3,1.4,2.45,1.36,5.14,2.38,7.97,3.06l.72.16.92.15c1.52.28,3.13.57,4.76.57.6,0,1.18-.04,1.71-.11.11,0,.19-.01.28-.01,1.3-.05,1.86-.75,1.86-2.3,0-1.98-1.25-2.28-1.99-2.28v.05Z"/><path class="st0" d="M13.01,29.77l3.54,1.95c.35.19.77.43,1.31.43,1.18,0,1.76-1.12,1.95-1.49.98-1.92.07-2.72-.83-3.21l-3.47-1.9c-.33-.18-.81-.45-1.4-.45-.8,0-1.46.49-1.95,1.44-1,1.96-.08,2.76.84,3.23Z"/><path class="st0" d="M31.59,15.67h0c-2.21.04-2.47,1.23-2.45,2.28l-.05,4.04c0,.47-.03,1.21.53,1.76.54.56,1.31.62,1.86.62h.09c2.15-.04,2.44-1.22,2.45-2.24l.04-3.96c0-.47.01-1.27-.57-1.87-.42-.42-1-.62-1.88-.62h-.01Z"/><path class="st0" d="M14.6,49.8c.54,0,.95-.26,1.25-.45l3.4-2.06c.07-.04.14-.08.2-.11.35-.19.92-.49,1.12-1.19.2-.75-.15-1.49-.5-2.06-.37-.6-.95-1.4-1.94-1.4-.56,0-.96.26-1.29.46l-3.51,2.11c-.41.24-1.03.61-1.21,1.4-.18.77.22,1.49.53,1.96.42.62,1.02,1.34,1.94,1.34h0Z"/><path class="st1" d="M73.64,0c-1.83.28-5.3,1.44-7.1,2.11-24.89,9.32-30.87,35.95-30.77,44.12l-6.78-10.64c-2.64-.8-5.88,2.18-4.86,4.27,3.05,6.29,11.59,18.06,12.34,18.93.5.57,4.4.38,4.54-.04.07-.22-2.54-34.32,22.18-49.09,3.43-2.05,8.94-3.58,11.44-4.53,1.4-.53-.11-5.28-1-5.14h.01Z"/><g><path class="st0" d="M59.91,40.84h-6.83v17.82h-6.08v-17.82h-6.83v-5.72h19.75v5.72Z"/><path class="st0" d="M66.85,58.66h-6.08v-23.54h6.08v23.54Z"/><path class="st0" d="M70.51,35.12h6.73l5.51,14.53h.07l5.51-14.53h6.73l2.18,23.54h-6.15l-.75-8.01-.14-6.62-.07-.36-4.54,14.31h-5.55l-4.58-13.99-.07-.36-.14,7.01-.75,8.01h-6.15l2.18-23.54Z"/><path class="st0" d="M115.38,58.66h-18.17v-23.54h18v5.58h-11.91v3.47h11.41v5.37h-11.41v3.54h12.09v5.58Z"/><path class="st0" d="M116.59,58.66v-23.54h11.23c1.5,0,2.82.21,3.95.63,1.13.42,2.07.98,2.81,1.7.74.72,1.29,1.55,1.66,2.5.37.95.55,1.97.55,3.04,0,1.43-.42,2.73-1.27,3.88s-1.95,2.06-3.31,2.7l5.26,9.09h-6.69l-4.4-8.12h-3.72v8.12h-6.08ZM127.83,40.84h-5.15v4.47h5.15c.4,0,.79-.04,1.14-.11.36-.07.67-.2.93-.38s.47-.41.61-.7c.14-.29.21-.64.21-1.07s-.07-.78-.21-1.06c-.14-.27-.35-.5-.61-.68s-.57-.3-.93-.38-.74-.11-1.14-.11Z"/></g><path class="st0" d="M78.66,6.65h6.98l8.77,23.54h-6.65l-1.4-3.76h-8.41l-1.4,3.76h-6.65l8.77-23.54ZM79.77,21.43h4.76l-2.33-7.76h-.07l-2.36,7.76Z"/><path class="st0" d="M106.29,13.27c-.29-.26-.63-.51-1.02-.73s-.82-.42-1.27-.59c-.45-.17-.91-.3-1.38-.39-.47-.1-.91-.14-1.34-.14-.84,0-1.46.15-1.88.45-.42.3-.63.72-.63,1.27,0,.24.05.46.16.66.11.2.26.39.46.55.2.17.45.32.73.47.29.14.6.27.93.39.88.31,1.89.63,3.02.95,1.13.32,2.2.76,3.2,1.31,1,.55,1.85,1.26,2.54,2.13.69.87,1.04,2.02,1.04,3.45,0,1.15-.23,2.19-.7,3.13-.47.94-1.12,1.74-1.97,2.4-.85.66-1.87,1.16-3.06,1.52-1.19.36-2.53.54-4.01.54-.93,0-1.87-.09-2.81-.27-.94-.18-1.84-.43-2.7-.75s-1.66-.71-2.4-1.16c-.74-.45-1.38-.97-1.93-1.54l3.47-4.04c.33.33.75.65,1.25.95.5.3,1.04.55,1.61.77s1.17.38,1.79.5c.62.12,1.22.18,1.79.18s1.03-.04,1.43-.11c.4-.07.74-.19,1-.36.26-.17.47-.37.61-.61.14-.24.21-.51.21-.82s-.08-.58-.25-.82c-.17-.24-.41-.45-.72-.64-.31-.19-.67-.36-1.09-.52-.42-.16-.86-.3-1.34-.45-.91-.26-1.87-.55-2.9-.88-1.03-.32-1.97-.76-2.84-1.31-.87-.55-1.59-1.24-2.16-2.07-.57-.84-.86-1.88-.86-3.15,0-1.15.21-2.18.64-3.09.43-.92,1.04-1.7,1.82-2.34.79-.64,1.74-1.15,2.86-1.5,1.12-.36,2.37-.54,3.76-.54.86,0,1.71.08,2.56.23s1.65.38,2.4.66c.75.29,1.44.62,2.06,1,.62.38,1.12.81,1.5,1.29l-3.61,4.04Z"/><path class="st0" d="M117.52,30.19h-6.08V6.65h6.08v8.69h2.33l5.94-8.69h7.26l-8.19,11.45,8.77,12.09h-7.26l-6.48-9.34h-2.36v9.34Z"/><path class="st0" d="M60.77,12.38v17.82h6.08V12.38h12.83v-5.72h-6.34c-8.71,2.47-12.58,5.72-12.58,5.72Z"/></svg>
+      <span class="offline-indicator" id="offlineIndicator" title="Offline — dine data synkroniseres automatisk når du igen er online" aria-label="Offline — synker når du er online igen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg></span>
+    </div>
+    <div class="hspace"></div>
+    <div class="header-actions">
+      <button class="theme-btn" id="themeToggleBtn" title="Toggle theme">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="burger-btn" id="burgerBtn" title="Menu" aria-label="Open menu">
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TIMER TAB -->
+  <div id="timerTab" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+    <div class="timer-actions">
+      <button class="btn btn-primary btn-sm" id="newTaskBtn">＋ New task</button>
+      <button class="btn btn-secondary btn-sm" id="resetDayBtn">↺ Reset day</button>
+      <button class="btn btn-secondary btn-sm" id="selectModeBtn" title="Select tasks to delete">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Select
+      </button>
+    </div>
+    <div class="inline-form" id="newTaskForm">
+      <div class="inline-form-row">
+        <input class="inline-input" id="newTaskInput" placeholder="Task name..." maxlength="80" />
+        <button class="btn btn-primary btn-sm" id="addTaskBtn"><span class="btn-text">Add</span></button>
+        <button class="btn btn-ghost btn-sm" id="cancelNewTaskBtn">✕</button>
+      </div>
+    </div>
+    <div class="inline-form" id="resetConfirm">
+      <div class="inline-form-row">
+        <span style="font-size:12px;color:var(--text-dim);flex:1">Reset today's time for all tasks?</span>
+        <button class="btn btn-danger btn-sm" id="resetYesBtn"><span class="btn-text">Reset</span></button>
+        <button class="btn btn-ghost btn-sm" id="cancelResetBtn">Cancel</button>
+      </div>
+    </div>
+    <div class="task-list" id="taskList"></div>
+    <div class="bulk-bar" id="bulkBar">
+      <span class="bulk-bar-count" id="bulkCount">0 selected</span>
+      <button class="btn btn-ghost btn-sm" id="bulkSelectAllBtn">Select all</button>
+      <button class="btn btn-danger btn-sm" id="bulkDeleteBtn">🗑 Delete selected</button>
+      <button class="btn btn-ghost btn-sm" id="bulkCancelBtn">Cancel</button>
+    </div>
+    <div class="bottom-area">
+      <div class="total-row">
+        <span class="total-label">Total time today</span>
+        <span class="total-value" id="totalToday">00:00:00</span>
+      </div>
+      <button class="end-day-btn" id="endDayBtn">End day →</button>
+      <div class="goal-row">
+        <div class="goal-pill">
+          <div class="goal-pill-label">Day</div>
+          <div class="goal-pill-value" id="dayPct">—</div>
+        </div>
+        <div class="goal-pill goal-pill-btn" id="weekPillBtn" title="Open week overview">
+          <div class="goal-pill-label">Week</div>
+          <div class="goal-pill-value" id="weekPct">—</div>
+        </div>
+        <div class="goal-pill">
+          <div class="goal-pill-label">Tasks</div>
+          <div class="goal-pill-value" id="taskCount">0</div>
+        </div>
+      </div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+
+  <!-- WEEK TAB -->
+  <div id="weekTab" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+    <div class="week-content">
+      <div class="week-nav">
+        <button class="icon-btn" id="prevWeekBtn" title="Previous week">‹</button>
+        <div class="week-nav-label" id="weekNavLabel"></div>
+        <button class="icon-btn" id="nextWeekBtn" title="Next week">›</button>
+        <button class="btn btn-ghost btn-sm" id="todayWeekBtn">Today</button>
+      </div>
+      <div id="weekDays"></div>
+      <div class="week-summary-row">
+        <span class="ws-label">Week total</span>
+        <strong class="ws-value" id="weekTotal">—</strong>
+      </div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="settingsTab" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+    <div class="settings-content">
+      <div class="settings-section">
+        <div class="settings-title">Profile</div>
+        <div class="settings-body">
+          <div class="form-field">
+            <label class="form-label">Name</label>
+            <input class="form-input" id="sName" type="text" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="sEmail" type="email" disabled />
+          </div>
+          <button class="btn btn-primary" id="saveProfileBtn"><span class="btn-text">Save profile</span></button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Goals & working hours</div>
+        <div class="settings-body">
+          <div class="settings-row">
+            <div class="form-field" style="flex:1">
+              <label class="form-label">Daily goal (hours)</label>
+              <input class="form-input" id="sDayGoal" type="number" min="0.5" max="24" step="0.5" />
+            </div>
+            <div class="form-field" style="flex:1">
+              <label class="form-label">Weekly goal (hours)</label>
+              <input class="form-input" id="sWeekGoal" type="number" min="1" max="80" step="1" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Auto-stop tid</label>
+            <input class="form-input" id="sDayEnd" type="time" min="12:00" max="23:59" step="900" />
+            <span class="form-hint">Aktive timere stoppes automatisk på dette tidspunkt</span>
+          </div>
+          <button class="btn btn-primary" id="saveGoalsBtn"><span class="btn-text">Save goals</span></button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Change password</div>
+        <div class="settings-body">
+          <div class="form-field">
+            <label class="form-label">Current password</label>
+            <input class="form-input" id="sCurPwd" type="password" placeholder="••••••" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">New password</label>
+            <input class="form-input" id="sNewPwd" type="password" placeholder="Min. 6 characters" />
+          </div>
+          <div class="form-error" id="pwdError"></div>
+          <button class="btn btn-ghost" id="changePwdBtn"><span class="btn-text">Change password</span></button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Chrome Extension — API-nøgle</div>
+        <div class="settings-body">
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6">Generer en API-nøgle til Chrome extensionen. Nøglen vises kun én gang — gem den med det samme.</div>
+          <div id="apiKeyDisplay" style="display:none">
+            <div class="form-label" style="margin-bottom:4px">Din API-nøgle</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="form-input" id="apiKeyValue" type="text" readonly style="font-family:var(--mono);font-size:11px;letter-spacing:0.04em" />
+              <button class="btn btn-ghost btn-sm" id="copyApiKeyBtn" title="Kopiér">Kopiér</button>
+            </div>
+            <div class="form-hint" style="color:var(--orange);margin-top:4px">⚠ Gem denne nøgle nu — den vises ikke igen.</div>
+          </div>
+          <div id="apiKeyStatus" style="font-size:12px;color:var(--text-muted)">Kontrollerer...</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="flex:1" id="generateApiKeyBtn"><span class="btn-text">Generer nøgle</span></button>
+            <button class="btn btn-danger" id="revokeApiKeyBtn" style="display:none"><span class="btn-text">Slet nøgle</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+
+  <!-- BOX TAB -->
+  <div id="boxTab" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+    <div class="box-toolbar">
+      <div class="box-search-wrap">
+        <svg class="box-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="box-search" id="boxSearch" type="text" placeholder="Search notes…" autocomplete="off" />
+        <button class="box-search-clear" id="boxSearchClear" title="Clear">✕</button>
+      </div>
+      <button class="btn btn-primary btn-sm" id="newNoteBtn">＋ New note</button>
+    </div>
+    <div class="box-grid" id="boxGrid">
+      <div class="box-empty" id="boxEmpty" style="display:none">
+        <svg viewBox="0 0 24 24" style="width:36px;height:36px;stroke:var(--text-muted);fill:none;stroke-width:1.5;margin-bottom:10px"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div id="boxEmptyMsg">No notes yet.<br>Hit <strong>＋ New note</strong> to start.</div>
+      </div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+
+  <!-- GRADIENT TAB -->
+  <div id="gradientTab" style="display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0">
+    <div class="settings-content">
+      <div class="settings-section">
+        <div class="settings-title">Baggrundsbillede</div>
+        <div class="settings-body">
+          <div class="form-label" style="margin-bottom:6px">Overlay</div>
+          <div class="bg-overlay-picker" id="bgOverlayPicker">
+            <button class="bg-overlay-opt active" data-overlay="dots-sm">
+              <div class="bg-overlay-preview overlay-dots-sm"></div>
+              <span>Fint</span>
+            </button>
+            <button class="bg-overlay-opt" data-overlay="dots-md">
+              <div class="bg-overlay-preview overlay-dots-md"></div>
+              <span>Medium</span>
+            </button>
+            <button class="bg-overlay-opt" data-overlay="dots-lg">
+              <div class="bg-overlay-preview overlay-dots-lg"></div>
+              <span>Groft</span>
+            </button>
+          </div>
+          <div class="form-label" style="margin-bottom:6px">Billeder <span id="bgImageCount" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(0/10)</span></div>
+          <div class="bg-gallery" id="bgGallery"></div>
+          <div style="margin-top:8px">
+            <input type="file" id="bgFileInput" accept="image/*" multiple style="display:none" />
+            <button class="btn btn-ghost btn-sm btn-full" id="bgUploadBtn">
+              <span class="btn-text">+ Upload billeder</span>
+            </button>
+          </div>
+          <div class="form-hint" style="margin-top:4px">Maks 10 billeder · Komprimeres automatisk</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Baggrundsgradient</div>
+        <div class="settings-body">
+          <div class="form-label" style="margin-bottom:4px">Preview</div>
+          <div class="gradient-preview" id="gradientPreview"></div>
+          <div class="settings-row" style="gap:12px;margin-top:4px">
+            <div class="form-field" style="flex:1">
+              <label class="form-label">🌙 Mørkt — øverst</label>
+              <input type="color" class="color-input" id="gDarkFrom" />
+            </div>
+            <div class="form-field" style="flex:1">
+              <label class="form-label">🌙 Mørkt — nederst</label>
+              <input type="color" class="color-input" id="gDarkTo" />
+            </div>
+          </div>
+          <div class="settings-row" style="gap:12px">
+            <div class="form-field" style="flex:1">
+              <label class="form-label">☀️ Lyst — øverst</label>
+              <input type="color" class="color-input" id="gLightFrom" />
+            </div>
+            <div class="form-field" style="flex:1">
+              <label class="form-label">☀️ Lyst — nederst</label>
+              <input type="color" class="color-input" id="gLightTo" />
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="btn btn-ghost" id="resetGradientBtn">Nulstil</button>
+            <button class="btn btn-primary" style="flex:1" id="saveGradientBtn"><span class="btn-text">Gem</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
+  </div>
+</div>
+
+<!-- END DAY MODAL -->
+<div class="overlay" id="endDayModal">
+  <div class="modal">
+    <div class="modal-title">End day</div>
+    <div class="modal-subtitle">These entries will be saved permanently and cannot be undone</div>
+    <div class="end-day-list" id="endDayList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelEndDayBtn"><span class="btn-text">Cancel</span></button>
+      <button class="btn btn-primary" id="confirmEndDayBtn"><span class="btn-text">Confirm & save →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT TIME MODAL (H/M/S) -->
+<div class="overlay" id="editTimeModal">
+  <div class="modal">
+    <div class="modal-title">Edit time</div>
+    <div class="modal-subtitle" id="editTimeSubtitle">Changes today's tracked time only, not the historical total.</div>
+    <input type="hidden" id="editTimeTaskId" />
+    <div class="time-inputs">
+      <div class="time-inp-group">
+        <div class="time-inp-label">Hours</div>
+        <input class="time-inp" id="etHours" type="number" min="0" max="23" />
+      </div>
+      <div class="time-inp-group">
+        <div class="time-inp-label">Minutes</div>
+        <input class="time-inp" id="etMinutes" type="number" min="0" max="59" />
+      </div>
+      <div class="time-inp-group">
+        <div class="time-inp-label">Seconds</div>
+        <input class="time-inp" id="etSeconds" type="number" min="0" max="59" />
+      </div>
+    </div>
+    <div class="form-error" id="editTimeError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelEditTimeBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveEditTimeBtn"><span class="btn-text">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div class="overlay" id="budgetModal">
+  <div class="modal">
+    <div class="modal-title">Set budget</div>
+    <div class="modal-subtitle" id="budgetModalSubtitle"></div>
+    <input type="hidden" id="budgetModalTaskId" />
+    <div class="form-field">
+      <label class="form-label">Allocated time (hours)</label>
+      <input class="form-input" id="budgetModalHours" type="number" min="0" max="999" step="0.5" placeholder="e.g. 3.5" />
+      <div class="form-hint">Leave empty or set to 0 to remove budget</div>
+    </div>
+    <div class="form-error" id="budgetModalError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelBudgetModalBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBudgetModalBtn"><span class="btn-text">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ENTRY MODAL (committed week entries) -->
+<div class="overlay" id="editEntryModal">
+  <div class="modal">
+    <div class="modal-title">Edit entry</div>
+    <input type="hidden" id="editEntryId" />
+    <div class="form-field">
+      <label class="form-label">Task</label>
+      <select class="form-input" id="editEntryTask"></select>
+    </div>
+    <div class="settings-row" style="gap:8px">
+      <div class="form-field" style="flex:1">
+        <label class="form-label">Start</label>
+        <input class="form-input" id="editEntryStart" type="time" />
+      </div>
+      <div class="form-field" style="flex:1">
+        <label class="form-label">End</label>
+        <input class="form-input" id="editEntryEnd" type="time" />
+      </div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="editEntryNote" type="text" placeholder="..." maxlength="200" />
+    </div>
+    <div class="form-error" id="editEntryError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelEditEntryBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveEntryBtn"><span class="btn-text">Save →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ENTRY MODAL -->
+<div class="overlay" id="addEntryModal">
+  <div class="modal">
+    <div class="modal-title">Add entry</div>
+    <input type="hidden" id="addEntryDate" />
+    <div class="form-field">
+      <label class="form-label">Task</label>
+      <select class="form-input" id="addEntryTask"></select>
+    </div>
+    <div class="settings-row" style="gap:8px">
+      <div class="form-field" style="flex:1">
+        <label class="form-label">Start</label>
+        <input class="form-input" id="addEntryStart" type="time" />
+      </div>
+      <div class="form-field" style="flex:1">
+        <label class="form-label">End</label>
+        <input class="form-input" id="addEntryEnd" type="time" />
+      </div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Note (optional)</label>
+      <input class="form-input" id="addEntryNote" type="text" placeholder="..." maxlength="200" />
+    </div>
+    <div class="form-error" id="addEntryError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelAddEntryBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveAddEntryBtn"><span class="btn-text">Add →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="overlay" id="forgotModal">
+  <div class="modal">
+    <!-- Step 1: request code -->
+    <div id="forgotStep1">
+      <div class="modal-title">Reset password</div>
+      <div class="modal-subtitle">Enter your email. An admin will receive a reset code to share with you.</div>
+      <div class="form-field" style="margin-top:4px">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="forgotEmail" type="email" placeholder="your@email.com" />
+      </div>
+      <div class="form-error" id="forgotError"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="forgotCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="forgotRequestBtn"><span class="btn-text">Get reset code</span></button>
+      </div>
+    </div>
+    <!-- Step 2: enter code + new password -->
+    <div id="forgotStep2" style="display:none">
+      <div class="modal-title">Enter reset code</div>
+      <div class="modal-subtitle" id="forgotStep2Subtitle">Enter the 8-character code and choose a new password.</div>
+      <div class="form-field" style="margin-top:4px">
+        <label class="form-label">Reset code</label>
+        <input class="form-input" id="forgotToken" type="text" placeholder="e.g. A3F8C21D" maxlength="8" autocomplete="off" style="font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">New password</label>
+        <input class="form-input" id="forgotNewPassword" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+      </div>
+      <div class="form-error" id="forgotStep2Error"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="forgotBackBtn">← Back</button>
+        <button class="btn btn-primary" id="forgotResetBtn"><span class="btn-text">Set new password</span></button>
+      </div>
+    </div>
+    <!-- Step 3: success -->
+    <div id="forgotStep3" style="display:none;text-align:center;padding:8px 0">
+      <div style="font-size:32px;margin-bottom:12px">✓</div>
+      <div class="modal-title" style="text-align:center">Password updated</div>
+      <div class="modal-subtitle" style="text-align:center;margin-top:6px">You can now sign in with your new password.</div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn btn-primary btn-full" id="forgotDoneBtn">Sign in</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KEYBOARD SHORTCUTS MODAL -->
+<div class="overlay" id="shortcutsModal">
+  <div class="modal">
+    <div class="modal-title">Keyboard shortcuts</div>
+    <div class="shortcuts-grid">
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Select task (click card)</span>
+        <div class="shortcut-keys"><span class="kbd">Click</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Start / stop selected timer</span>
+        <div class="shortcut-keys"><span class="kbd">Space</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Create new task</span>
+        <div class="shortcut-keys"><span class="kbd">N</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Close dialog / drawer</span>
+        <div class="shortcut-keys"><span class="kbd">Esc</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-desc">Confirm form</span>
+        <div class="shortcut-keys"><span class="kbd">Enter</span></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" id="closeShortcutsBtn">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title">Export rapport</div>
+    <div class="modal-subtitle">Vælg periode og evt. kundenummer</div>
+    <div style="display:flex;gap:10px">
+      <div class="form-field" style="flex:1">
+        <label class="form-label">Fra</label>
+        <input class="form-input" type="date" id="exportFrom" />
+      </div>
+      <div class="form-field" style="flex:1">
+        <label class="form-label">Til</label>
+        <input class="form-input" type="date" id="exportTo" />
+      </div>
+    </div>
+    <div class="form-field" style="position:relative">
+      <label class="form-label">Kundenummer <span style="color:var(--text-muted);font-weight:400">(valgfrit)</span></label>
+      <input class="form-input" type="text" id="exportCustomer" placeholder="f.eks. 129223" maxlength="6" autocomplete="off" inputmode="numeric" />
+      <div id="customerDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);z-index:20;max-height:180px;overflow-y:auto;margin-top:2px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"></div>
+    </div>
+    <div class="form-error" id="exportError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" id="exportGenerateBtn"><span class="btn-text">Generer PDF</span></button>
+      <button class="btn btn-ghost btn-full" id="exportCancelBtn">Annuller</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="note-editor-overlay" id="noteEditorOverlay">
+  <div class="note-editor" id="noteEditor">
+    <div class="note-editor-header">
+      <input class="note-editor-title-input" id="noteEditorTitle" type="text" placeholder="Note title…" maxlength="120" />
+      <button class="note-editor-close" id="noteEditorClose">✕</button>
+    </div>
+    <div class="note-editor-body">
+      <textarea class="note-editor-content" id="noteEditorContent" placeholder="Write your note here…" rows="8"></textarea>
+    </div>
+    <div class="note-editor-footer">
+      <div class="note-color-picker" id="noteColorPicker">
+        <div class="note-color-dot dc-default active" data-color="default" title="Default"></div>
+        <div class="note-color-dot dc-red"     data-color="red"     title="Red"></div>
+        <div class="note-color-dot dc-orange"  data-color="orange"  title="Orange"></div>
+        <div class="note-color-dot dc-green"   data-color="green"   title="Green"></div>
+        <div class="note-color-dot dc-blue"    data-color="blue"    title="Blue"></div>
+        <div class="note-color-dot dc-purple"  data-color="purple"  title="Purple"></div>
+      </div>
+      <div class="note-editor-actions">
+        <button class="btn btn-toggle btn-sm" id="notePinBtn" title="Pin note"><span class="btn-text"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg>Pin</span></button>
+        <button class="btn btn-danger-solid btn-sm" id="noteDelBtn" title="Delete note"><span class="btn-text">🗑 Delete</span></button>
+        <button class="btn btn-primary btn-sm" id="noteSaveBtn"><span class="btn-text">Save</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirmDialog">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle"></div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="offline-banner" id="offlineBanner">⚡ Offline — timer kører, entries gemmes når forbindelsen er genoprettet</div>
+
+<script>
+'use strict';
+
+const API = window.location.protocol === 'file:'
+  ? 'http://localhost:3001/api'
+  : '/api';
+
+// ── STATE ──
+let token        = localStorage.getItem('tt_token') || null;
+let me           = null;
+let tasks        = [];
+let liveTimers   = {};
+let todayEntries = [];
+let weekOffset   = 0;
+let tickerRef        = null;
+let autoStopRef      = null;
+let extensionPollRef = null; // polls for extension-triggered task starts
+let dayGoalH     = parseFloat(localStorage.getItem('tt_dayGoal')  || '8');
+let weekGoalH    = parseFloat(localStorage.getItem('tt_weekGoal') || '37');
+let weekSecCache = null;
+let currentTheme = localStorage.getItem('tt_theme') || 'dark';
+let selectedTaskId  = null; // keyboard-selected task card
+let selectionMode   = false; // bulk-delete mode
+let selectedTaskIds = new Set(); // tasks marked for bulk delete
+
+// ── OFFLINE OUTBOX ──
+// Entries that failed to save due to network are queued here and synced on reconnect
+function outboxGet() {
+  try { return JSON.parse(localStorage.getItem('tt_outbox') || '[]'); } catch { return []; }
+}
+function outboxAdd(entry) {
+  const q = outboxGet();
+  q.push({ ...entry, _outboxId: Date.now() + Math.random() });
+  localStorage.setItem('tt_outbox', JSON.stringify(q));
+}
+function outboxClear() { localStorage.removeItem('tt_outbox'); }
+function outboxRemove(id) {
+  const q = outboxGet().filter(e => e._outboxId !== id);
+  localStorage.setItem('tt_outbox', JSON.stringify(q));
+}
+// Remove any pending create_entry items for a given (task, date).
+// Used when an offline Edit-Time replaces what a previous offline op queued,
+// so we don't end up POSTing stale entries on sync.
+function outboxRemoveCreatesFor(task_id, date) {
+  const q = outboxGet().filter(e => {
+    const op = e._op || 'create_entry';
+    if (op !== 'create_entry') return true;
+    return !(e.task_id === task_id && e.date === date);
+  });
+  localStorage.setItem('tt_outbox', JSON.stringify(q));
+}
+
+// ── OFFLINE TASK CREATION ──
+// Tasks created while offline get a NEGATIVE integer id. Negative ids never
+// collide with server ids (always positive) and pass cleanly through every
+// parseInt()/Number() in the code. On reconnect they're created for real and
+// their temp id is remapped to the real id everywhere it's referenced.
+function nextTempId() {
+  let n = parseInt(localStorage.getItem('tt_temp_counter') || '0', 10);
+  n -= 1;
+  localStorage.setItem('tt_temp_counter', String(n));
+  return n; // -1, -2, -3, ...
+}
+function isTempId(id) { return typeof id === 'number' && id < 0; }
+function pendingTasksGet() {
+  try { return JSON.parse(localStorage.getItem('tt_pending_tasks') || '[]'); } catch { return []; }
+}
+function pendingTaskAdd(task) {
+  const l = pendingTasksGet(); l.push(task);
+  localStorage.setItem('tt_pending_tasks', JSON.stringify(l));
+}
+function pendingTaskRemove(tempId) {
+  localStorage.setItem('tt_pending_tasks',
+    JSON.stringify(pendingTasksGet().filter(t => t.id !== tempId)));
+}
+// On load, re-insert any not-yet-synced offline tasks into the in-memory list
+function mergePendingTasks() {
+  for (const pt of pendingTasksGet()) {
+    if (!tasks.find(t => t.id === pt.id)) {
+      tasks.unshift({
+        id: pt.id, name: pt.name, color: pt.color || '#f07c28',
+        budget_seconds: pt.budget_seconds || 0, pinned: 0, _pending: true
+      });
+    }
+  }
+}
+// Create a task locally without a server round-trip
+function createTaskOffline(name) {
+  const tempId = nextTempId();
+  const task = { id: tempId, name, color: '#f07c28', budget_seconds: 0, pinned: 0, _pending: true };
+  tasks.unshift(task);
+  pendingTaskAdd({ id: tempId, name, color: task.color, budget_seconds: 0 });
+  hideNewTask();
+  renderTaskList();
+  toast('Offline — job gemt lokalt, synkes når du er online', 'warn');
+  startTimer(tempId); // pure-local; pingStart() is audio only, no network
+}
+// Push offline-created tasks to the server, returning a tempId→realId map
+async function syncPendingTasks() {
+  const pending = pendingTasksGet();
+  if (!pending.length || !token) return { map: {}, created: 0 };
+  const idMap = {};
+  let created = 0;
+  for (const pt of pending) {
+    try {
+      const real = await apiFetch('/tasks', {
+        method: 'POST',
+        body: { name: pt.name, color: pt.color, budget_seconds: pt.budget_seconds }
+      });
+      idMap[pt.id] = real.id;
+      const t = tasks.find(t => t.id === pt.id);
+      if (t) { t.id = real.id; t.sort_order = real.sort_order; t.created_at = real.created_at; delete t._pending; }
+      // Move a running timer keyed by the temp id onto the real id
+      if (liveTimers[pt.id]) { liveTimers[real.id] = liveTimers[pt.id]; delete liveTimers[pt.id]; }
+      pendingTaskRemove(pt.id);
+      created++;
+    } catch { break; } // still offline — leave the rest queued
+  }
+  if (created > 0) {
+    // Remap any queued time-entries that referenced a temp id
+    const q = outboxGet();
+    let changed = false;
+    for (const e of q) {
+      if (idMap[e.task_id] != null) { e.task_id = idMap[e.task_id]; changed = true; }
+    }
+    if (changed) localStorage.setItem('tt_outbox', JSON.stringify(q));
+    persistTimers(); // running-timer keys may have shifted
+  }
+  return { map: idMap, created };
+}
+
+async function syncOutbox() {
+  if (!token) return;
+  // 1) Create offline-made tasks first, so queued entries can reference real ids
+  const { created } = await syncPendingTasks();
+  const q = outboxGet();
+  let synced = 0;
+  for (const item of q) {
+    try {
+      const { _outboxId, _op, ...body } = item;
+      const op = _op || 'create_entry';
+      if (op === 'create_entry') {
+        const saved = await apiFetch('/entries', { method: 'POST', body });
+        // If a temp entry was placeholding this op locally, swap it for the real one
+        if (body.date === todayStr()) {
+          const idx = todayEntries.findIndex(e =>
+            e.id < 0 && e.task_id === saved.task_id &&
+            e.start_time === saved.start_time && e.end_time === saved.end_time);
+          if (idx >= 0) todayEntries[idx] = saved;
+          else todayEntries.push(saved);
+          cacheSet('tt_today_entries', todayEntries);
+        }
+      } else if (op === 'delete_entry') {
+        try { await apiFetch(`/entries/${body.entry_id}`, { method: 'DELETE' }); }
+        catch (e) { if (e.status !== 404) throw e; } // already gone is fine
+      }
+      outboxRemove(_outboxId);
+      synced++;
+    } catch { break; } // stop on first failure — still offline
+  }
+  if (created > 0 || synced > 0) {
+    renderTaskList();
+    const parts = [];
+    if (created > 0) parts.push(`${created} job${created !== 1 ? 's' : ''}`);
+    if (synced > 0)  parts.push(`${synced} registrering${synced !== 1 ? 'er' : ''}`);
+    toast(`Synkroniseret: ${parts.join(' + ')} ✓`, 'ok');
+  }
+}
+
+function setOffline(offline) {
+  document.getElementById('offlineBanner').classList.toggle('show', offline);
+  const ind = document.getElementById('offlineIndicator');
+  if (ind) ind.classList.toggle('show', offline);
+}
+
+// ── LOCAL CACHE (lets the app boot offline after a reload) ──
+function cacheSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+function cacheGet(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } }
+
+// Boot the app from cached data when the server is unreachable but we still
+// hold a valid token. Without this, an offline reload would bounce the user
+// to the login screen and hide their offline tasks/timers.
+function bootOffline() {
+  setOffline(true);
+  me = cacheGet('tt_me') || me || { name: '' };
+  if (me && me.preferences) { applyGradient(me.preferences); applyBackground(me.preferences); }
+  tasks = cacheGet('tt_tasks') || [];
+  mergePendingTasks();
+  todayEntries = cacheGet('tt_today_entries') || [];
+  const wk = cacheGet('tt_week'); if (wk) weekSecCache = wk;
+  restoreTimers();
+  
+  showPage('appPage');
+  renderTaskList();
+  scheduleAutoStop();
+  startTicker();
+  // Keep trying to reconnect in the background
+  const retry = () => refreshFromServer().then(ok => { if (!ok && !navigator.onLine) setTimeout(retry, 8000); });
+  setTimeout(retry, 8000);
+}
+
+// Pull fresh state from the server (used on reconnect). Returns true on success.
+async function refreshFromServer() {
+  if (!token) return false;
+  try {
+    me = await apiFetch('/auth/me'); cacheSet('tt_me', me);
+    setOffline(false);
+    await syncOutbox();          // create offline tasks + flush queued entries
+    await loadTasks();           // canonical list (now with real ids)
+    await loadTodayEntries();
+    await fetchWeekTotal();
+    
+    renderTaskList();
+    startExtensionPoll();        // guarded — won't double-start
+    return true;
+  } catch { return false; }
+}
+
+
+// ── AUDIO ──
+function playTone(freq, type, dur, vol) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+    osc.onended = () => ctx.close();
+  } catch {}
+}
+function pingStart() { playTone(880, 'sine', 0.18, 0.3); }
+function pingStop()  { playTone(420, 'sine', 0.32, 0.22); }
+
+// ── THEME ──
+const SVG_MOON = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+const SVG_SUN  = `<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+  localStorage.setItem('tt_theme', theme);
+  const svgIcon = theme === 'light' ? SVG_SUN : SVG_MOON;
+  const headerBtn = document.getElementById('themeToggleBtn');
+  if (headerBtn) headerBtn.innerHTML = svgIcon;
+  const drawerIcon = document.getElementById('drawerThemeIcon');
+  if (drawerIcon) drawerIcon.innerHTML = svgIcon;
+}
+function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+
+// ── GRADIENT CUSTOMISATION ──
+const GRAD_DEFAULTS = {
+  darkFrom:  '#221029',
+  darkTo:    '#2b1a06',
+  lightFrom: '#faf6f0',
+  lightTo:   '#fcf5e8',
+};
+
+function applyGradient(prefs) {
+  const p = prefs || {};
+  const df = p.darkFrom  || GRAD_DEFAULTS.darkFrom;
+  const dt = p.darkTo    || GRAD_DEFAULTS.darkTo;
+  const lf = p.lightFrom || GRAD_DEFAULTS.lightFrom;
+  const lt = p.lightTo   || GRAD_DEFAULTS.lightTo;
+
+  // Inject a <style> tag that overrides --bg-gradient for each theme
+  let el = document.getElementById('gradientStyle');
+  if (!el) { el = document.createElement('style'); el.id = 'gradientStyle'; document.head.appendChild(el); }
+  el.textContent = `
+    :root { --bg-gradient: linear-gradient(160deg, ${df} 0%, ${dt} 100%); }
+    [data-theme="light"] { --bg-gradient: linear-gradient(160deg, ${lf} 0%, ${lt} 100%); }
+  `;
+}
+
+function loadGradientForm(prefs) {
+  const p = prefs || {};
+  document.getElementById('gDarkFrom').value  = p.darkFrom  || GRAD_DEFAULTS.darkFrom;
+  document.getElementById('gDarkTo').value    = p.darkTo    || GRAD_DEFAULTS.darkTo;
+  document.getElementById('gLightFrom').value = p.lightFrom || GRAD_DEFAULTS.lightFrom;
+  document.getElementById('gLightTo').value   = p.lightTo   || GRAD_DEFAULTS.lightTo;
+  updateGradientPreview();
+}
+
+function updateGradientPreview() {
+  const isDark = currentTheme !== 'light';
+  const from = document.getElementById(isDark ? 'gDarkFrom' : 'gLightFrom').value;
+  const to   = document.getElementById(isDark ? 'gDarkTo'   : 'gLightTo').value;
+  document.getElementById('gradientPreview').style.background =
+    `linear-gradient(to right, ${from}, ${to})`;
+}
+
+function openGradientModal() { switchTab('gradient'); }
+
+async function saveGradient() {
+  const prefs = Object.assign({}, (me && me.preferences) || {}, {
+    darkFrom:  document.getElementById('gDarkFrom').value,
+    darkTo:    document.getElementById('gDarkTo').value,
+    lightFrom: document.getElementById('gLightFrom').value,
+    lightTo:   document.getElementById('gLightTo').value,
+  });
+  setBtnLoading('saveGradientBtn', true);
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+    if (me) me.preferences = updated.preferences;
+    applyGradient(prefs);
+    toast('Gradient gemt', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('saveGradientBtn', false);
+}
+
+async function resetGradient() {
+  setBtnLoading('resetGradientBtn', true);
+  try {
+    const prefs = Object.assign({}, (me && me.preferences) || {});
+    delete prefs.darkFrom; delete prefs.darkTo; delete prefs.lightFrom; delete prefs.lightTo;
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+    if (me) me.preferences = updated.preferences;
+    applyGradient(prefs);
+    loadGradientForm(prefs);
+    toast('Gradient nulstillet', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('resetGradientBtn', false);
+}
+
+// ── BACKGROUND IMAGES ──
+let _bgImages = [];
+
+function applyBackground(prefs) {
+  const p = prefs || {};
+  document.body.classList.toggle('has-bg-image', !!p.bgImage);
+  let el = document.getElementById('bgStyle');
+  if (!el) { el = document.createElement('style'); el.id = 'bgStyle'; document.head.appendChild(el); }
+  if (!p.bgImage) { el.textContent = ''; return; }
+
+  const overlayKey = p.bgOverlay || 'dots-sm';
+  const darkDotMap  = { 'dots-sm': 'rgba(0,0,0,0.42) 1px',   'dots-md': 'rgba(0,0,0,0.32) 1.5px', 'dots-lg': 'rgba(0,0,0,0.25) 2.5px' };
+  const lightDotMap = { 'dots-sm': 'rgba(0,0,0,0.18) 1px',   'dots-md': 'rgba(0,0,0,0.13) 1.5px', 'dots-lg': 'rgba(0,0,0,0.10) 2.5px' };
+  const sizeMap     = { 'dots-sm': '6px 6px', 'dots-md': '12px 12px', 'dots-lg': '20px 20px' };
+
+  const dd  = darkDotMap[overlayKey]  || darkDotMap['dots-sm'];
+  const ld  = lightDotMap[overlayKey] || lightDotMap['dots-sm'];
+  const sz  = sizeMap[overlayKey]     || sizeMap['dots-sm'];
+  const img = `url('${p.bgImage}')`;
+
+  el.textContent = `
+    body {
+      background-image: radial-gradient(circle, ${dd}, transparent ${dd.split(' ').pop()}),
+        linear-gradient(160deg, rgba(17,13,24,0.64) 0%, rgba(20,12,4,0.64) 100%), ${img};
+      background-size: ${sz}, 100% 100%, cover;
+      background-position: 0 0, 0 0, center center;
+      background-attachment: fixed, fixed, fixed;
+    }
+    [data-theme="light"] body {
+      background-image: radial-gradient(circle, ${ld}, transparent ${ld.split(' ').pop()}),
+        linear-gradient(160deg, rgba(250,246,240,0.52) 0%, rgba(252,245,232,0.52) 100%), ${img};
+      background-size: ${sz}, 100% 100%, cover;
+      background-position: 0 0, 0 0, center center;
+      background-attachment: fixed, fixed, fixed;
+    }
+  `;
+}
+
+async function loadBgImages() {
+  try { _bgImages = await apiFetch('/background-images'); } catch { _bgImages = []; }
+  renderBgGallery();
+}
+
+function renderBgGallery() {
+  const gallery  = document.getElementById('bgGallery');
+  const countEl  = document.getElementById('bgImageCount');
+  if (!gallery) return;
+  const activeBg = me && me.preferences && me.preferences.bgImage;
+  const count    = _bgImages.length;
+  if (countEl) countEl.textContent = `(${count}/10)`;
+  const uploadBtn = document.getElementById('bgUploadBtn');
+  if (uploadBtn) uploadBtn.disabled = count >= 10;
+
+  gallery.innerHTML = '';
+
+  const noneEl = document.createElement('div');
+  noneEl.className = 'bg-img-none' + (!activeBg ? ' active' : '');
+  noneEl.title = 'Ingen baggrund';
+  noneEl.innerHTML = `<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Ingen</span>`;
+  noneEl.onclick = () => selectBgImage(null);
+  gallery.appendChild(noneEl);
+
+  _bgImages.forEach(img => {
+    const item = document.createElement('div');
+    item.className = 'bg-img-item' + (activeBg === img.url ? ' active' : '');
+    item.innerHTML = `<img src="${img.url}" loading="lazy" alt=""><button class="bg-img-del" title="Slet">✕</button>`;
+    item.querySelector('.bg-img-del').onclick = e => { e.stopPropagation(); deleteBgImage(img.filename); };
+    item.onclick = () => selectBgImage(img.url);
+    gallery.appendChild(item);
+  });
+}
+
+async function selectBgImage(url) {
+  const prefs = Object.assign({}, (me && me.preferences) || {}, { bgImage: url || null });
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+    if (me) me.preferences = updated.preferences;
+    applyBackground(prefs);
+    renderBgGallery();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function selectBgOverlay(overlay) {
+  document.querySelectorAll('#bgOverlayPicker .bg-overlay-opt').forEach(el =>
+    el.classList.toggle('active', el.dataset.overlay === overlay));
+  const prefs = Object.assign({}, (me && me.preferences) || {}, { bgOverlay: overlay });
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { preferences: prefs } });
+    if (me) me.preferences = updated.preferences;
+    if (prefs.bgImage) applyBackground(prefs);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteBgImage(filename) {
+  try {
+    await apiFetch(`/background-images/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+    if (me && me.preferences && me.preferences.bgImage === `/uploads/${filename}`) {
+      await selectBgImage(null);
+    }
+    _bgImages = _bgImages.filter(i => i.filename !== filename);
+    renderBgGallery();
+    toast('Billede slettet', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function resizeImageToBlob(file, maxW = 1280, maxH = 960, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxW || h > maxH) { const r = Math.min(maxW / w, maxH / h); w = Math.round(w * r); h = Math.round(h * r); }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Konvertering fejlede')), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Kunne ikke indlæse billede')); };
+    img.src = url;
+  });
+}
+
+async function uploadBgImage(file) {
+  const blob = await resizeImageToBlob(file);
+  const fd = new FormData();
+  fd.append('image', blob, 'bg.jpg');
+  const resp = await fetch(API + '/background-images', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd,
+  });
+  // Parse defensively — a misconfigured proxy could still return HTML
+  let data;
+  try { data = await resp.json(); }
+  catch { throw new Error(`Serverfejl (${resp.status}) — kunne ikke uploade billede`); }
+  if (!resp.ok) throw new Error(data.error || 'Upload fejlede');
+  _bgImages.unshift(data);
+  renderBgGallery();
+  if (!me || !me.preferences || !me.preferences.bgImage) await selectBgImage(data.url);
+  return data;
+}
+
+async function handleBgFileInput(e) {
+  const files = Array.from(e.target.files).slice(0, Math.max(0, 10 - _bgImages.length));
+  e.target.value = '';
+  if (!files.length) return;
+  setBtnLoading('bgUploadBtn', true);
+  for (const file of files) { try { await uploadBgImage(file); } catch (err) { toast(err.message, 'err'); } }
+  setBtnLoading('bgUploadBtn', false);
+}
+
+// ── BOX (NOTES) ──
+let notes = [];
+let _editingNoteId = null;
+let _noteColor     = 'default';
+let _notePinned    = false;
+let _noteSearchTimer = null;
+
+async function loadNotes(q = '') {
+  const url = q ? `/notes?q=${encodeURIComponent(q)}` : '/notes';
+  try {
+    notes = await apiFetch(url);
+  } catch { notes = []; }
+  renderNotes(q);
+}
+
+function renderNotes(q = '') {
+  const grid  = document.getElementById('boxGrid');
+  const empty = document.getElementById('boxEmpty');
+  const emptyMsg = document.getElementById('boxEmptyMsg');
+
+  // Remove existing note cards (keep #boxEmpty)
+  grid.querySelectorAll('.note-card').forEach(c => c.remove());
+
+  if (notes.length === 0) {
+    empty.style.display = 'flex';
+    emptyMsg.innerHTML = q
+      ? `No notes match "<strong>${esc(q)}</strong>".`
+      : 'No notes yet.<br>Hit <strong>＋ New note</strong> to start.';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const fmt = dt => {
+    // SQLite datetime('now') returns "2026-03-13 20:00:00" — normalize to ISO
+    const d = new Date((dt || '').replace(' ', 'T') + (dt && dt.includes('T') ? '' : 'Z'));
+    return isNaN(d) ? '?' : d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  };
+
+  notes.forEach(note => {
+    const card = document.createElement('div');
+    card.className = `note-card color-${note.color}${note.pinned ? ' pinned' : ''}`;
+    card.dataset.id = note.id;
+    card.innerHTML = `
+      <div class="note-card-accent"></div>
+      <div class="note-card-body">
+        <div class="note-title">${esc(note.title)}</div>
+        ${note.content ? `<div class="note-preview">${esc(note.content)}</div>` : ''}
+        <div class="note-meta"><span class="note-date">${fmt(note.updated_at)}</span></div>
+      </div>
+      <button class="note-card-delete" title="Delete note" aria-label="Delete note">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>`;
+    card.addEventListener('click', () => openNoteEditor(note.id));
+    card.querySelector('.note-card-delete').addEventListener('click', e => {
+      e.stopPropagation();
+      _editingNoteId = note.id;
+      deleteNote();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function openNoteEditor(noteId) {
+  const note = noteId ? notes.find(n => n.id === noteId) : null;
+  _editingNoteId = noteId || null;
+  _noteColor     = note ? note.color   : 'default';
+  _notePinned    = note ? !!note.pinned : false;
+
+  document.getElementById('noteEditorTitle').value   = note ? note.title   : '';
+  document.getElementById('noteEditorContent').value = note ? note.content : '';
+
+  // Update color picker
+  document.querySelectorAll('.note-color-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.dataset.color === _noteColor);
+  });
+
+  // Update pin button
+  const pinBtn = document.getElementById('notePinBtn');
+  pinBtn.classList.toggle('active', _notePinned);
+  pinBtn.innerHTML = `<span class="btn-text"><svg viewBox="0 0 24 24" width="13" height="13" fill="${_notePinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg>${_notePinned ? 'Pinned' : 'Pin'}</span>`;
+
+  // Hide delete on new note
+  document.getElementById('noteDelBtn').style.display = noteId ? '' : 'none';
+
+  document.getElementById('noteEditorOverlay').classList.add('show');
+
+  // Auto-size textarea width to fit longest line
+  if (note && note.content) {
+    const ta = document.getElementById('noteEditorContent');
+    const lines = note.content.split('\n');
+    const longest = lines.reduce((a, b) => a.length > b.length ? a : b, '');
+    // Measure longest line using a hidden span
+    const measure = document.createElement('span');
+    measure.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:14px/1.65 var(--sans);padding:0 16px';
+    measure.textContent = longest;
+    document.body.appendChild(measure);
+    const needed = Math.min(720, Math.max(320, measure.offsetWidth + 48));
+    document.body.removeChild(measure);
+    ta.style.width = needed + 'px';
+  } else {
+    document.getElementById('noteEditorContent').style.width = '';
+  }
+
+  document.getElementById('noteEditorTitle').focus();
+}
+
+async function saveNote() {
+  const title   = document.getElementById('noteEditorTitle').value.trim() || 'Untitled';
+  const content = document.getElementById('noteEditorContent').value;
+  const body    = { title, content, color: _noteColor, pinned: _notePinned };
+  const isNew   = !_editingNoteId; // capture before closeNoteEditor clears it
+
+  setBtnLoading('noteSaveBtn', true);
+  try {
+    if (_editingNoteId) {
+      await apiFetch(`/notes/${_editingNoteId}`, { method: 'PATCH', body });
+    } else {
+      await apiFetch('/notes', { method: 'POST', body });
+    }
+    const q = document.getElementById('boxSearch').value.trim();
+    closeNoteEditor();
+    await loadNotes(q);
+    toast(isNew ? 'Note created' : 'Note updated');
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    setBtnLoading('noteSaveBtn', false);
+  }
+}
+
+async function deleteNote() {
+  if (!_editingNoteId) return;
+  showConfirm('Delete note?', 'This cannot be undone.', async () => {
+    try {
+      await apiFetch(`/notes/${_editingNoteId}`, { method: 'DELETE' });
+      closeNoteEditor();
+      await loadNotes(document.getElementById('boxSearch').value.trim());
+      toast('Note deleted');
+    } catch (e) { toast(e.message, 'err'); }
+  });
+}
+
+function closeNoteEditor() {
+  document.getElementById('noteEditorOverlay').classList.remove('show');
+  _editingNoteId = null;
+}
+
+// ── INIT ──
+async function init() {
+  applyTheme(currentTheme);
+  setupEventListeners();
+  if (!token) { showPage('authPage'); return; }
+  try {
+    me = await apiFetch('/auth/me');
+    cacheSet('tt_me', me);
+    applyGradient(me.preferences);
+    applyBackground(me.preferences);
+    await loadTasks();
+    await loadTodayEntries();
+    await fetchWeekTotal();
+    restoreTimers(); // ← gendanner aktive timers fra localStorage
+    await syncOutbox(); // ← sync any pending offline entries + tasks
+    
+    showPage('appPage');
+    renderTaskList();
+    scheduleAutoStop();
+    startTicker();
+    startExtensionPoll();
+  } catch (err) {
+    // Only log out if the server explicitly rejected the token (401)
+    if (err.status === 401) {
+      token = null; localStorage.removeItem('tt_token');
+      showPage('authPage');
+    } else if (cacheGet('tt_me')) {
+      // Server unreachable but we have a token + cached data — run from cache
+      bootOffline();
+    } else {
+      // No cache to fall back on — show auth and keep retrying quietly
+      showPage('authPage');
+      if (token) setTimeout(() => { if (token) init(); }, 5000);
+    }
+  }
+}
+
+// ── API ──
+async function apiFetch(path, options = {}) {
+  let res;
+  try {
+    res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      ...options,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+  } catch {
+    const err = new Error('Network error — is the server reachable?');
+    err.status = 0; // network failure
+    throw err;
+  }
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data.error || 'Unknown error');
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+// ── AUTH ──
+function toggleAuth() {
+  const l = document.getElementById('loginCard'), r = document.getElementById('registerCard');
+  const showLogin = l.style.display !== 'none';
+  l.style.display = showLogin ? 'none' : ''; r.style.display = showLogin ? '' : 'none';
+  hideError('loginError'); hideError('regError');
+}
+
+async function doLogin() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
+  if (!email || !password) { showError('loginError', 'Please enter email and password'); return; }
+  setBtnLoading('loginBtn', true);
+  try { await afterAuth(await apiFetch('/auth/login', { method: 'POST', body: { email, password, rememberMe } })); }
+  catch (e) { showError('loginError', e.message); setBtnLoading('loginBtn', false); }
+}
+
+// ── FORGOT PASSWORD ──
+let _forgotEmail = '';
+
+function openForgotModal() {
+  _forgotEmail = document.getElementById('loginEmail').value.trim();
+  document.getElementById('forgotEmail').value = _forgotEmail;
+  document.getElementById('forgotToken').value = '';
+  document.getElementById('forgotNewPassword').value = '';
+  ['forgotError','forgotStep2Error'].forEach(id => { const el = document.getElementById(id); el.textContent=''; el.classList.remove('show'); });
+  document.getElementById('forgotStep1').style.display = '';
+  document.getElementById('forgotStep2').style.display = 'none';
+  document.getElementById('forgotStep3').style.display = 'none';
+  openModal('forgotModal');
+}
+
+async function forgotRequestCode() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) { showError('forgotError', 'Please enter your email'); return; }
+  setBtnLoading('forgotRequestBtn', true);
+  try {
+    const res = await apiFetch('/auth/forgot-password', { method: 'POST', body: { email } });
+    _forgotEmail = email;
+    // If admin gets resetCode back, show it prominently (they share it with user)
+    const subtitle = res.resetCode
+      ? `Code generated for <strong>${email}</strong>. Admin reset code: <code style="font-family:var(--mono);font-size:15px;color:var(--orange);letter-spacing:0.12em">${res.resetCode}</code><br><small style="color:var(--text-muted)">Expires in 2 hours.</small>`
+      : `If an account exists for <strong>${email}</strong>, an admin has the reset code.`;
+    document.getElementById('forgotStep2Subtitle').innerHTML = subtitle;
+    document.getElementById('forgotEmail').value = email;
+    document.getElementById('forgotStep1').style.display = 'none';
+    document.getElementById('forgotStep2').style.display = '';
+  } catch (e) {
+    showError('forgotError', e.message);
+  } finally {
+    setBtnLoading('forgotRequestBtn', false);
+  }
+}
+
+async function forgotResetPassword() {
+  const email       = _forgotEmail;
+  const token       = document.getElementById('forgotToken').value.trim();
+  const newPassword = document.getElementById('forgotNewPassword').value;
+  if (!token)       { showError('forgotStep2Error', 'Please enter the reset code'); return; }
+  if (!newPassword) { showError('forgotStep2Error', 'Please enter a new password'); return; }
+  setBtnLoading('forgotResetBtn', true);
+  try {
+    await apiFetch('/auth/reset-password', { method: 'POST', body: { email, token, newPassword } });
+    document.getElementById('forgotStep2').style.display = 'none';
+    document.getElementById('forgotStep3').style.display = '';
+  } catch (e) {
+    showError('forgotStep2Error', e.message);
+  } finally {
+    setBtnLoading('forgotResetBtn', false);
+  }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!name || !email || !password) { showError('regError', 'Please fill in all fields'); return; }
+  setBtnLoading('regBtn', true);
+  try { await afterAuth(await apiFetch('/auth/register', { method: 'POST', body: { name, email, password } })); }
+  catch (e) { showError('regError', e.message); setBtnLoading('regBtn', false); }
+}
+
+async function afterAuth(res) {
+  token = res.token; localStorage.setItem('tt_token', token); me = res.user;
+  applyGradient(me.preferences);
+  applyBackground(me.preferences);
+  await loadTasks(); await loadTodayEntries(); await fetchWeekTotal();
+  restoreTimers();
+  await syncOutbox();
+  
+  showPage('appPage'); renderTaskList(); scheduleAutoStop(); startTicker();
+  startExtensionPoll();
+}
+
+function logout() {
+  clearInterval(tickerRef); clearTimeout(autoStopRef); stopExtensionPoll();
+  // Queue any running timers to outbox — they'll sync on next login
+  Object.entries(liveTimers).forEach(([idStr, lt]) => {
+    const elapsed = Math.floor((new Date() - lt.startedAt) / 1000);
+    if (elapsed < 10) return;
+    const s = new Date(lt.startedAt), e = new Date();
+    outboxAdd({
+      task_id: parseInt(idStr), date: localDateStr(s),
+      start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
+      end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+    });
+  });
+  token = null; localStorage.removeItem('tt_token'); localStorage.removeItem('tt_timers');
+  me = null; tasks = []; liveTimers = {}; todayEntries = []; weekSecCache = null;
+  showPage('authPage');
+}
+
+// ── TASKS ──
+async function loadTasks() { tasks = await apiFetch('/tasks'); cacheSet('tt_tasks', tasks); mergePendingTasks(); }
+
+function showNewTask() {
+  hideResetConfirm();
+  document.getElementById('newTaskForm').classList.add('show');
+  document.getElementById('newTaskInput').focus();
+}
+function hideNewTask() {
+  document.getElementById('newTaskForm').classList.remove('show');
+  document.getElementById('newTaskInput').value = '';
+}
+
+async function submitNewTask() {
+  const name = document.getElementById('newTaskInput').value.trim();
+  if (!name) return;
+  setBtnLoading('addTaskBtn', true);
+  // Offline: create locally and queue for sync
+  if (!navigator.onLine) {
+    createTaskOffline(name);
+    setBtnLoading('addTaskBtn', false);
+    return;
+  }
+  try {
+    const task = await apiFetch('/tasks', { method: 'POST', body: { name } });
+    tasks.unshift(task);  // new task goes to the top, matching backend sort_order
+    hideNewTask();
+    renderTaskList();
+    toast('Task created', 'ok');
+    // Auto-start timer on new task creation
+    await startTimer(task.id);
+  } catch (e) {
+    // Network dropped mid-request — fall back to offline creation instead of losing it
+    if (e.status === 0 || !navigator.onLine) {
+      createTaskOffline(name);
+    } else {
+      toast(e.message, 'err');
+    }
+  }
+  setBtnLoading('addTaskBtn', false);
+}
+
+function requestDeleteTask(id) {
+  const task = tasks.find(t => t.id === id); if (!task) return;
+  const hasTimed = todayEntries.some(e => e.task_id === id) || !!liveTimers[id];
+  showConfirm('Delete task',
+    hasTimed
+      ? `"${task.name}" has time logged today. The task will be archived — history is preserved in Week view.`
+      : `Are you sure you want to delete "${task.name}"?`,
+    () => doDeleteTask(id));
+}
+
+async function doDeleteTask(id) {
+  if (liveTimers[id]) { delete liveTimers[id]; persistTimers(); }
+  // Offline-created task never synced to the server: delete purely locally
+  if (isTempId(id)) {
+    pendingTaskRemove(id);
+    // Drop any queued time-entries that pointed at this temp task, so the
+    // outbox sync doesn't later POST entries for a task that won't exist.
+    localStorage.setItem('tt_outbox', JSON.stringify(outboxGet().filter(e => e.task_id !== id)));
+    tasks = tasks.filter(t => t.id !== id);
+    renderTaskList(); toast('Task deleted', 'ok');
+    return;
+  }
+  try {
+    await apiFetch(`/tasks/${id}`, { method: 'DELETE' });
+    tasks = tasks.filter(t => t.id !== id);
+    renderTaskList(); toast('Task deleted', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function startEditTaskName(id) {
+  const task = tasks.find(t => t.id === id); if (!task) return;
+  const el = document.getElementById(`tn-${id}`); if (!el) return;
+  const inp = document.createElement('input');
+  inp.className = 'task-name-edit'; inp.value = task.name; inp.maxLength = 80;
+  el.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = async () => {
+    if (done) return; done = true;
+    const v = inp.value.trim();
+    if (v && v !== task.name) {
+      if (isTempId(id)) {
+        // Local-only task: rename in memory and in pending storage
+        task.name = v;
+        const list = pendingTasksGet();
+        const pt = list.find(t => t.id === id);
+        if (pt) { pt.name = v; localStorage.setItem('tt_pending_tasks', JSON.stringify(list)); }
+      } else {
+        try { const u = await apiFetch(`/tasks/${id}`, { method: 'PATCH', body: { name: v } }); task.name = u.name; }
+        catch (e) { toast('Rename failed: ' + e.message, 'err'); }
+      }
+    }
+    renderTaskList();
+  };
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { done = true; renderTaskList(); }
+  });
+}
+
+async function reorderTasks(fromId, toId) {
+  const fi = tasks.findIndex(t => t.id === fromId), ti = tasks.findIndex(t => t.id === toId);
+  if (fi < 0 || ti < 0) return;
+  const [moved] = tasks.splice(fi, 1); tasks.splice(ti, 0, moved);
+  renderTaskList();
+  try { await apiFetch('/tasks/reorder', { method: 'POST', body: { order: tasks.map(t => t.id) } }); } catch {}
+}
+
+// ── TIMER ENGINE ──
+async function startTimer(taskId) {
+  const running = Object.keys(liveTimers).map(Number).filter(id => id !== taskId);
+  if (running.length > 0) await Promise.all(running.map(id => stopTimer(id)));
+  if (liveTimers[taskId]) return;
+  liveTimers[taskId] = { startedAt: new Date() };
+  persistTimers();
+  pingStart();
+  renderTaskList();
+  // Brief pop animation on the card
+  const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+  if (card) { card.classList.add('pop'); setTimeout(() => card.classList.remove('pop'), 300); }
+}
+
+async function stopTimer(taskId, skipPersist = false) {
+  const lt = liveTimers[taskId]; if (!lt) return;
+  const elapsed = Math.floor((new Date() - lt.startedAt) / 1000);
+  delete liveTimers[taskId];
+  if (!skipPersist) persistTimers();
+  pingStop();
+  if (elapsed < 10) { renderTaskList(); return; }
+  const s = new Date(lt.startedAt), e = new Date();
+  const dateStr = localDateStr(s);
+  const entryBody = {
+    task_id: taskId, date: dateStr,
+    start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
+    end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+  };
+  try {
+    const entry = await apiFetch('/entries', { method: 'POST', body: entryBody });
+    if (dateStr === todayStr()) todayEntries.push(entry);
+  } catch (err) {
+    // Network error — queue for later sync
+    if (err.status === 0 || !navigator.onLine) {
+      outboxAdd(entryBody);
+      // Also push a local temp entry so the time stays visible immediately;
+      // syncOutbox() will swap it for the real server entry on reconnect.
+      if (dateStr === todayStr()) {
+        todayEntries.push({
+          id: nextTempId(), task_id: taskId, date: dateStr,
+          start_time: entryBody.start_time, end_time: entryBody.end_time,
+          seconds: elapsed, _pending: true
+        });
+        cacheSet('tt_today_entries', todayEntries);
+      }
+      toast('Offline — registrering gemt lokalt', 'warn');
+    } else {
+      toast('Timer error: ' + err.message, 'err');
+    }
+  }
+  renderTaskList();
+}
+
+// Persist timer state to localStorage so reloads don't lose running timers
+function persistTimers() {
+  const data = {};
+  Object.entries(liveTimers).forEach(([id, lt]) => {
+    data[id] = lt.startedAt.toISOString();
+  });
+  localStorage.setItem('tt_timers', JSON.stringify(data));
+}
+
+// Restore timers from localStorage on page load
+function restoreTimers() {
+  try {
+    const raw = localStorage.getItem('tt_timers');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.entries(data).forEach(([id, iso]) => {
+      const taskId = parseInt(id);
+      // Only restore if task still exists
+      if (tasks.find(t => t.id === taskId)) {
+        liveTimers[taskId] = { startedAt: new Date(iso) };
+      }
+    });
+    // Clear stale entries for tasks that no longer exist
+    persistTimers();
+  } catch {}
+}
+
+async function stopAllTimers() {
+  // Suppress individual persistTimers() calls during batch stop — persist once at end
+  const ids = Object.keys(liveTimers).map(Number);
+  await Promise.all(ids.map(id => stopTimer(id, true)));
+  persistTimers();
+}
+
+function startTicker() {
+  clearInterval(tickerRef);
+  tickerRef = setInterval(() => {
+    if (Object.keys(liveTimers).length > 0) { renderTimerValues(); renderBottomStats(); }
+  }, 1000);
+}
+
+function scheduleAutoStop() {
+  clearTimeout(autoStopRef); if (!me) return;
+  const endHour   = me.day_end_hour   ?? 17;
+  const endMinute = me.day_end_minute ?? 0;
+  const now = new Date(), stop = new Date();
+  stop.setHours(endHour, endMinute, 0, 0);
+  if (stop <= now) stop.setDate(stop.getDate() + 1);
+  autoStopRef = setTimeout(async () => {
+    await stopAllTimers(); renderTaskList();
+    toast(`Timers stopped automatically at ${pad(endHour)}:${pad(endMinute)}`, 'ok');
+    scheduleAutoStop();
+  }, stop - now);
+}
+
+// ── TODAY ENTRIES ──
+async function loadTodayEntries() { todayEntries = await apiFetch('/entries/today'); cacheSet('tt_today_entries', todayEntries); }
+
+async function fetchWeekTotal() {
+  const dates = weekDates(0);
+  const from = localDateStr(dates[0]), to = localDateStr(dates[4]);
+  try {
+    const r = await apiFetch(`/entries/week-total?from=${from}&to=${to}`);
+    weekSecCache = { seconds: r.total_seconds, fetchedAt: Date.now() };
+    cacheSet('tt_week', weekSecCache);
+  } catch {}
+}
+
+// ── RENDER TASK LIST ──
+function budgetColor(pct) {
+  if (pct < 75)  return 'var(--green)';
+  if (pct < 100) return '#f5a623';
+  return 'var(--red)';
+}
+
+function renderTaskList() {
+  const el = document.getElementById('taskList');
+  if (!tasks.length) {
+    el.innerHTML = `<div class="empty-state">No tasks yet<br>
+      <span style="font-size:11px;color:var(--text-muted)">Create your first task with ＋ New task</span></div>`;
+    renderBottomStats(); return;
+  }
+  el.innerHTML = '';
+  // Tasks arrive from the API already sorted by the user's chosen order
+  // (sort_order ASC). We render them as-is — no auto-hopping of running
+  // timers — so the order only changes when the user reorders or adds a task.
+  const sorted = tasks;
+  sorted.forEach(task => {
+    const isRunning = !!liveTimers[task.id];
+    const sec = liveSec(task.id);
+    const budget = task.budget_seconds || 0;
+    const card = document.createElement('div');
+    card.className = 'task-card'
+      + (isRunning ? ' active-task' : '')
+      + (selectionMode ? ' in-selection' : '')
+      + (selectionMode && selectedTaskIds.has(task.id) ? ' bulk-selected' : '')
+      + (selectionMode && task.pinned ? ' is-pinned' : '');
+    card.draggable = !selectionMode;
+    card.dataset.id = task.id;
+
+    const pct = budget > 0 ? Math.min(100, (totalSecForBudget(task) / budget) * 100) : 0;
+    const budgetTotal = totalSecForBudget(task);
+    const budgetMeta = budget > 0
+      ? `<span class="task-budget-label">${hm(budgetTotal)} / ${hm(budget)}</span>` : '';
+    const budgetBar = budget > 0
+      ? `<div class="budget-bar-wrap"><div class="budget-bar-fill" style="width:${pct}%;background:${budgetColor(pct)}"></div></div>` : '';
+
+    card.innerHTML = `
+      <div class="task-card-top">
+        ${selectionMode
+          ? `<div class="task-checkbox${!task.pinned && selectedTaskIds.has(task.id) ? ' checked' : ''}${task.pinned ? ' pinned-placeholder' : ''}"></div>`
+          : `<div class="drag-handle" title="Drag to sort">⠿</div>`}
+        <div class="task-info">
+          <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Oprettet offline — synkes når du er online">offline</span>' : ''}</div>
+          <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+        </div>
+        ${selectionMode
+          ? `<button class="ctrl pin-btn${task.pinned ? ' pinned' : ''}" title="${task.pinned ? 'Unpin — allow deletion' : 'Pin — protect from deletion'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="${task.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg></button>`
+          : `<div class="task-controls">
+          <button class="ctrl pp${isRunning ? ' running' : ''}" title="${isRunning ? 'Stop' : 'Start'}">${isRunning ? '⏸' : '▶'}</button>
+          <button class="ctrl copy-btn" title="Copy task name"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>
+          <button class="ctrl budget-btn${budget > 0 ? ' budget-active' : ''}" title="${budget > 0 ? 'Edit budget' : 'Set budget'}">◎</button>
+          <button class="ctrl del" title="Delete">🗑</button>
+        </div>`}
+      </div>${budgetBar}`;
+
+    // Apply selected state (single-select highlight)
+    if (selectedTaskId === task.id && !selectionMode) card.classList.add('selected');
+
+    if (selectionMode) {
+      // In selection mode — card click toggles selection, pin button toggles pin
+      card.addEventListener('click', e => {
+        if (e.target.closest('.ctrl.pin-btn')) return;
+        toggleBulkSelect(task.id);
+      });
+      const pinBtn = card.querySelector('.ctrl.pin-btn');
+      if (pinBtn) pinBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        togglePinTask(task.id);
+      });
+    } else {
+      // Normal mode
+      card.addEventListener('click', e => {
+        if (e.target.closest('button')) return;
+        selectTask(task.id);
+      });
+      card.querySelector('.task-name').addEventListener('dblclick', () => startEditTaskName(task.id));
+      card.querySelector('.task-time').addEventListener('dblclick', () => openEditTime(task.id));
+      card.querySelector('.ctrl.pp').addEventListener('click', () => {
+        selectTask(task.id);
+        if (isRunning) stopTimer(task.id).then(() => renderTaskList());
+        else           startTimer(task.id);
+      });
+      card.querySelector('.ctrl.copy-btn').addEventListener('click', () => {
+        const match = task.name.match(/^(\d{6})/);
+        copyToClipboard(match ? match[1] : task.name);
+      });
+      card.querySelector('.ctrl.budget-btn').addEventListener('click', () => openBudgetModal(task.id));
+      card.querySelector('.ctrl.del').addEventListener('click', () => requestDeleteTask(task.id));
+      card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', String(task.id)); setTimeout(() => card.classList.add('dragging'), 0); });
+      card.addEventListener('dragend',   () => card.classList.remove('dragging'));
+      card.addEventListener('dragover',  e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+      card.addEventListener('drop',      e => {
+        e.preventDefault(); card.classList.remove('drag-over');
+        const fId = parseInt(e.dataTransfer.getData('text/plain'));
+        if (fId !== task.id) reorderTasks(fId, task.id);
+      });
+    }
+    el.appendChild(card);
+  });
+  renderBottomStats();
+}
+
+function selectTask(id) {
+  selectedTaskId = id;
+  document.querySelectorAll('.task-card').forEach(c => {
+    c.classList.toggle('selected', parseInt(c.dataset.id) === id);
+  });
+}
+
+function enterSelectionMode() {
+  selectionMode = true;
+  selectedTaskIds.clear();
+  // Auto-select all unpinned tasks
+  tasks.forEach(t => { if (!t.pinned) selectedTaskIds.add(t.id); });
+  document.getElementById('selectModeBtn').classList.add('active');
+  document.getElementById('selectModeBtn').style.background = 'var(--orange-dim)';
+  document.getElementById('selectModeBtn').style.color = 'var(--orange)';
+  document.getElementById('selectModeBtn').style.borderColor = 'rgba(240,124,40,0.4)';
+  renderTaskList();
+  updateBulkBar();
+}
+
+function exitSelectionMode() {
+  selectionMode = false;
+  selectedTaskIds.clear();
+  const btn = document.getElementById('selectModeBtn');
+  btn.style.background = '';
+  btn.style.color = '';
+  btn.style.borderColor = '';
+  document.getElementById('bulkBar').classList.remove('show');
+  renderTaskList();
+}
+
+function toggleBulkSelect(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task || task.pinned) return; // pinned tasks cannot be bulk-selected
+  if (selectedTaskIds.has(taskId)) {
+    selectedTaskIds.delete(taskId);
+  } else {
+    selectedTaskIds.add(taskId);
+  }
+  // Update just the affected card — no full re-render
+  const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+  if (card) {
+    card.classList.toggle('bulk-selected', selectedTaskIds.has(taskId));
+    const cb = card.querySelector('.task-checkbox');
+    if (cb) cb.classList.toggle('checked', selectedTaskIds.has(taskId));
+  }
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const n = selectedTaskIds.size;
+  document.getElementById('bulkCount').textContent =
+    n === 0 ? 'No tasks selected' : `${n} selected`;
+  document.getElementById('bulkBar').classList.toggle('show', selectionMode);
+  document.getElementById('bulkDeleteBtn').disabled = n === 0;
+}
+
+function bulkSelectAll() {
+  const unpinned = tasks.filter(t => !t.pinned);
+  const allSelected = unpinned.every(t => selectedTaskIds.has(t.id));
+  if (allSelected) {
+    unpinned.forEach(t => selectedTaskIds.delete(t.id));
+  } else {
+    unpinned.forEach(t => selectedTaskIds.add(t.id));
+  }
+  renderTaskList();
+  updateBulkBar();
+}
+
+async function togglePinTask(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const newPinned = !task.pinned;
+  try {
+    const updated = await apiFetch(`/tasks/${taskId}`, { method: 'PATCH', body: { pinned: newPinned } });
+    task.pinned = updated.pinned;
+    // Sync bulk-selection state: pinned tasks must never be selected for deletion
+    if (selectionMode) {
+      if (newPinned) {
+        selectedTaskIds.delete(taskId);
+      } else {
+        selectedTaskIds.add(taskId);
+      }
+      updateBulkBar();
+    }
+    renderTaskList();
+    toast(newPinned ? '📌 Task pinned' : 'Task unpinned', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function bulkDelete() {
+  if (!selectedTaskIds.size) return;
+  const n = selectedTaskIds.size;
+  showConfirm(
+    `Delete ${n} task${n !== 1 ? 's' : ''}?`,
+    `This will permanently delete ${n} task${n !== 1 ? 's' : ''} and all associated time entries.`,
+    async () => {
+      const ids = [...selectedTaskIds];
+      for (const id of ids) {
+        try { await apiFetch(`/tasks/${id}`, { method: 'DELETE' }); } catch {}
+      }
+      tasks = tasks.filter(t => !ids.includes(t.id));
+      exitSelectionMode();
+      persistTimers();
+      renderTaskList();
+      toast(`${n} task${n !== 1 ? 's' : ''} slettet`, 'ok');
+    }
+  );
+}
+
+function renderTimerValues() {
+  tasks.forEach(task => {
+    const el = document.getElementById(`tt-${task.id}`); if (!el) return;
+    const isRunning = !!liveTimers[task.id];
+    const sec    = liveSec(task.id);
+    const budget = task.budget_seconds || 0;
+    const total  = budget > 0 ? totalSecForBudget(task) : 0;
+    const budgetMeta = budget > 0
+      ? `<span class="task-budget-label">${hm(total)} / ${hm(budget)}</span>` : '';
+    el.innerHTML = hms(sec) + (isRunning ? '<span class="live-dot"></span>' : '') + budgetMeta;
+    if (budget > 0) {
+      const card = el.closest('.task-card');
+      const fill = card && card.querySelector('.budget-bar-fill');
+      if (fill) {
+        const pct = Math.min(100, (total / budget) * 100);
+        fill.style.width  = pct + '%';
+        fill.style.background = budgetColor(pct);
+      }
+    }
+  });
+}
+
+function liveSec(taskId) {
+  const lt = liveTimers[taskId];
+  // todayEntries: uncommitted entries for today only (committed=0)
+  const todayBase = todayEntries.filter(e => e.task_id === taskId).reduce((s, e) => s + e.seconds, 0);
+  const live = lt ? Math.floor((new Date() - lt.startedAt) / 1000) : 0;
+  return todayBase + live;
+}
+
+// Total seconds for budget bar: all committed (all time) + today's uncommitted + live
+function totalSecForBudget(task) {
+  const committed = task.total_committed_seconds || 0;
+  return committed + liveSec(task.id);
+}
+
+function renderBottomStats() {
+  let totalSec = 0;
+  tasks.forEach(t => { totalSec += liveSec(t.id); });
+  document.getElementById('totalToday').textContent = hms(totalSec);
+  document.getElementById('taskCount').textContent  = tasks.length;
+  const dg = dayGoalH * 3600, dp = dg > 0 ? Math.min(100, Math.round(totalSec / dg * 100)) : 0;
+  const dpEl = document.getElementById('dayPct');
+  dpEl.textContent = dg > 0 ? `${dp}%` : '—';
+  dpEl.className = 'goal-pill-value' + (dp >= 100 ? ' at-goal' : '');
+  const wSec = (weekSecCache ? weekSecCache.seconds : 0) + totalSec;
+  const wg = weekGoalH * 3600, wp = wg > 0 ? Math.min(100, Math.round(wSec / wg * 100)) : 0;
+  const wpEl = document.getElementById('weekPct');
+  wpEl.textContent = wg > 0 ? `${wp}%` : '—';
+  wpEl.className = 'goal-pill-value' + (wp >= 100 ? ' at-goal' : '');
+  document.getElementById('endDayBtn').disabled = !(totalSec > 0 || todayEntries.length > 0);
+}
+
+// ── RESET DAY ──
+function showResetConfirm() { hideNewTask(); document.getElementById('resetConfirm').classList.add('show'); }
+function hideResetConfirm() { document.getElementById('resetConfirm').classList.remove('show'); }
+
+async function doResetDay() {
+  setBtnLoading('resetYesBtn', true);
+  Object.keys(liveTimers).forEach(id => delete liveTimers[parseInt(id)]);
+  persistTimers(); // clear localStorage too
+  const toDelete = todayEntries.filter(e => e.date === todayStr());
+  await Promise.all(toDelete.map(e => apiFetch(`/entries/${e.id}`, { method: 'DELETE' }).catch(() => {})));
+  todayEntries = todayEntries.filter(e => e.date !== todayStr());
+  hideResetConfirm(); renderTaskList();
+  toast("Today's time has been reset", 'ok');
+  setBtnLoading('resetYesBtn', false);
+}
+
+// ── END DAY ──
+async function showEndDay() {
+  setElLoading('endDayBtn', true);
+  await stopAllTimers(); await loadTodayEntries();
+  setElLoading('endDayBtn', false);
+  if (!todayEntries.length) { toast('No time to save today', 'warn'); return; }
+  const byTask = {};
+  todayEntries.forEach(e => {
+    if (!byTask[e.task_id]) byTask[e.task_id] = { name: e.task_name, seconds: 0 };
+    byTask[e.task_id].seconds += e.seconds;
+  });
+  document.getElementById('endDayList').innerHTML = Object.values(byTask).map(t =>
+    `<div class="edl-row"><span class="edl-task">${esc(t.name)}</span><span class="edl-time">${hm(t.seconds)}</span></div>`
+  ).join('');
+  openModal('endDayModal');
+}
+
+async function confirmEndDay() {
+  setBtnLoading('confirmEndDayBtn', true);
+  try {
+    const res = await apiFetch('/entries/end-day', { method: 'POST' });
+    closeModal('endDayModal');
+    todayEntries = [];
+    weekSecCache = null;
+    liveTimers = {};
+    persistTimers(); // clear localStorage — timers are now committed
+    await fetchWeekTotal(); renderTaskList();
+    toast(`${res.committed} opgave${res.committed !== 1 ? 'r' : ''} gemt ✓`, 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('confirmEndDayBtn', false);
+}
+
+// ── EDIT TIME (double-click on task-time) ──
+function openEditTime(taskId) {
+  const task = tasks.find(t => t.id === taskId); if (!task) return;
+  const sec = liveSec(taskId);
+  document.getElementById('editTimeTaskId').value  = taskId;
+  document.getElementById('editTimeSubtitle').textContent =
+    `"${task.name}" — changes today's time only, not the historical total.`;
+  document.getElementById('etHours').value   = Math.floor(sec / 3600);
+  document.getElementById('etMinutes').value = Math.floor((sec % 3600) / 60);
+  document.getElementById('etSeconds').value = sec % 60;
+  hideError('editTimeError');
+  openModal('editTimeModal');
+  setTimeout(() => { document.getElementById('etHours').focus(); document.getElementById('etHours').select(); }, 50);
+}
+
+async function saveEditTime() {
+  const taskId  = parseInt(document.getElementById('editTimeTaskId').value);
+  const h = parseInt(document.getElementById('etHours').value)   || 0;
+  const m = parseInt(document.getElementById('etMinutes').value) || 0;
+  const s = parseInt(document.getElementById('etSeconds').value) || 0;
+  const newSecs = h * 3600 + m * 60 + s;
+  if (newSecs < 0) { showError('editTimeError', 'Time cannot be negative'); return; }
+  setBtnLoading('saveEditTimeBtn', true);
+  const taskEntries = todayEntries.filter(e => e.task_id === taskId);
+
+  // ── OFFLINE PATH ─────────────────────────────────────────────────────────
+  // Queue server-side changes, but update local state immediately so the user
+  // sees the new total right away.
+  if (!navigator.onLine) {
+    const today = todayStr();
+    // Drop any prior pending creates for this task today (handles repeat edits)
+    outboxRemoveCreatesFor(taskId, today);
+    // For real server entries: queue deletes. Temp entries: they had pending
+    // creates which we just scrubbed, so nothing more to do.
+    for (const e of taskEntries) {
+      if (e.id > 0) outboxAdd({ _op: 'delete_entry', entry_id: e.id });
+    }
+    todayEntries = todayEntries.filter(e => e.task_id !== taskId);
+
+    if (liveTimers[taskId]) {
+      liveTimers[taskId].startedAt = new Date(Date.now() - newSecs * 1000);
+      persistTimers();
+    } else if (newSecs > 0) {
+      const now = new Date(), startD = new Date(now.getTime() - newSecs * 1000);
+      const body = {
+        task_id: taskId, date: today,
+        start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+      };
+      outboxAdd(body);
+      // Local placeholder so the new total is visible immediately
+      todayEntries.push({
+        id: nextTempId(), task_id: taskId, date: today,
+        start_time: body.start_time, end_time: body.end_time,
+        seconds: newSecs, _pending: true
+      });
+    }
+    cacheSet('tt_today_entries', todayEntries);
+    closeModal('editTimeModal'); renderTaskList();
+    toast('Offline — tid gemt lokalt', 'warn');
+    setBtnLoading('saveEditTimeBtn', false);
+    return;
+  }
+
+  // ── ONLINE PATH (unchanged behaviour) ────────────────────────────────────
+  try {
+    await Promise.all(taskEntries.map(e => apiFetch(`/entries/${e.id}`, { method: 'DELETE' })));
+    todayEntries = todayEntries.filter(e => e.task_id !== taskId);
+    if (liveTimers[taskId]) {
+      liveTimers[taskId].startedAt = new Date(Date.now() - newSecs * 1000);
+      persistTimers();
+    } else if (newSecs > 0) {
+      const now = new Date(), startD = new Date(now.getTime() - newSecs * 1000);
+      const entry = await apiFetch('/entries', { method: 'POST', body: {
+        task_id: taskId, date: todayStr(),
+        start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+      }});
+      todayEntries.push(entry);
+    }
+    closeModal('editTimeModal'); renderTaskList(); toast('Time updated', 'ok');
+  } catch (e) { showError('editTimeError', e.message); }
+  setBtnLoading('saveEditTimeBtn', false);
+}
+
+// ── BUDGET MODAL (◎ button) ──
+function openBudgetModal(taskId) {
+  const task = tasks.find(t => t.id === taskId); if (!task) return;
+  document.getElementById('budgetModalTaskId').value = taskId;
+  document.getElementById('budgetModalSubtitle').textContent = `"${task.name}"`;
+  document.getElementById('budgetModalHours').value = task.budget_seconds > 0
+    ? String(task.budget_seconds / 3600) : '';
+  hideError('budgetModalError');
+  openModal('budgetModal');
+  setTimeout(() => { document.getElementById('budgetModalHours').focus(); document.getElementById('budgetModalHours').select(); }, 50);
+}
+
+async function saveBudgetModal() {
+  const taskId = parseInt(document.getElementById('budgetModalTaskId').value);
+  const raw    = document.getElementById('budgetModalHours').value;
+  const hours  = raw === '' ? 0 : parseFloat(raw);
+  if (isNaN(hours) || hours < 0) { showError('budgetModalError', 'Enter a valid number of hours'); return; }
+  if (hours > 999) { showError('budgetModalError', 'Budget cannot exceed 999 hours'); return; }
+  const budget_seconds = hours > 0 ? Math.round(hours * 3600) : 0;
+  setBtnLoading('saveBudgetModalBtn', true);
+  try {
+    const updated = await apiFetch(`/tasks/${taskId}`, { method: 'PATCH', body: { budget_seconds } });
+    const task = tasks.find(t => t.id === taskId);
+    if (task) task.budget_seconds = updated.budget_seconds;
+    closeModal('budgetModal');
+    renderTaskList();
+    toast(budget_seconds > 0 ? `Budget set to ${hm(budget_seconds)}` : 'Budget removed', 'ok');
+  } catch (e) { showError('budgetModalError', e.message); }
+  setBtnLoading('saveBudgetModalBtn', false);
+}
+
+// ── EXPORT ──
+function fmtDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? `${h}t ${m}m` : `${m}m`;
+}
+
+function fmtDateLong(dateStr) {
+  // dateStr = 'YYYY-MM-DD'
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, mo - 1, d);
+  return date.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function openExportModal() {
+  const now = new Date();
+  const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const mon = new Date(now); mon.setDate(now.getDate() - day);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  document.getElementById('exportFrom').value     = localDateStr(mon);
+  document.getElementById('exportTo').value       = localDateStr(sun);
+  document.getElementById('exportCustomer').value = '';
+  document.getElementById('customerDropdown').style.display = 'none';
+  hideError('exportError');
+  closeDrawer();
+  openModal('exportModal');
+}
+
+async function generateExport() {
+  const from     = document.getElementById('exportFrom').value;
+  const to       = document.getElementById('exportTo').value;
+  const customer = document.getElementById('exportCustomer').value.trim();
+  hideError('exportError');
+
+  if (!from || !to)  { showError('exportError', 'Vælg både fra- og til-dato.'); return; }
+  if (from > to)     { showError('exportError', 'Fra-dato skal være før til-dato.'); return; }
+  if (customer && !/^\d{1,6}$/.test(customer)) {
+    showError('exportError', 'Kundenummer skal være op til 6 cifre.'); return;
+  }
+
+  setBtnLoading('exportGenerateBtn', true);
+  try {
+    const qs = `/export?from=${from}&to=${to}${customer ? '&customer=' + customer : ''}`;
+    const data = await apiFetch(qs);
+    closeModal('exportModal');
+    openPrintWindow(data);
+  } catch (e) {
+    showError('exportError', e.message);
+  } finally {
+    setBtnLoading('exportGenerateBtn', false);
+  }
+}
+
+// Customer autocomplete
+let _customerDebounce = null;
+async function fetchCustomerSuggestions(q) {
+  try {
+    const results = await apiFetch(`/export/customers${q ? '?q=' + encodeURIComponent(q) : ''}`);
+    const dd = document.getElementById('customerDropdown');
+    if (!results.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = results.map(r => `
+      <div class="customer-option" data-num="${esc(r.num)}" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center">
+        <span style="font-family:var(--mono);font-weight:700;color:var(--orange)">${esc(r.num)}</span>
+        <span style="color:var(--text-dim);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span>
+      </div>`).join('');
+    dd.querySelectorAll('.customer-option').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        document.getElementById('exportCustomer').value = el.dataset.num;
+        dd.style.display = 'none';
+      });
+      el.addEventListener('mouseover', () => el.style.background = 'var(--surface3)');
+      el.addEventListener('mouseout',  () => el.style.background = '');
+    });
+    dd.style.display = 'block';
+  } catch {}
+}
+
+function openPrintWindow(data) {
+  const { from, to, userName, grandTotal, days, customer, byTask } = data;
+  const periodLabel = from === to
+    ? fmtDateLong(from)
+    : `${fmtDateLong(from)} – ${fmtDateLong(to)}`;
+
+  let bodyHtml = '';
+
+  if (customer && byTask) {
+    // ── CUSTOMER REPORT — grouped by task ──
+    const taskEntries = Object.entries(byTask).sort((a, b) => b[1] - a[1]);
+    if (!taskEntries.length) {
+      bodyHtml = '<p class="empty">Ingen registrerede timer på dette kundenummer i perioden.</p>';
+    } else {
+      const taskRows = taskEntries.map(([name, secs]) => `
+        <tr>
+          <td class="task-name">${esc(name)}</td>
+          <td class="duration">${fmtDuration(secs)}</td>
+        </tr>`).join('');
+      bodyHtml = `
+        <div class="day-block">
+          <div class="day-header">
+            <span class="day-title">Opgaver</span>
+            <span class="day-total">${fmtDuration(grandTotal)}</span>
+          </div>
+          <table><tbody>${taskRows}</tbody></table>
+        </div>`;
+    }
+  } else {
+    // ── DATE REPORT — grouped by day ──
+    const sortedDates = Object.keys(days || {}).sort();
+    if (!sortedDates.length) {
+      bodyHtml = '<p class="empty">Ingen registrerede timer i denne periode.</p>';
+    } else {
+      for (const date of sortedDates) {
+        const { tasks, dayTotal } = days[date];
+        const taskRows = tasks.map(t => `
+          <tr>
+            <td class="task-name">${esc(t.name)}</td>
+            <td class="duration">${fmtDuration(t.seconds)}</td>
+          </tr>`).join('');
+        bodyHtml += `
+          <div class="day-block">
+            <div class="day-header">
+              <span class="day-title">${fmtDateLong(date)}</span>
+              <span class="day-total">${fmtDuration(dayTotal)}</span>
+            </div>
+            <table><tbody>${taskRows}</tbody></table>
+          </div>`;
+      }
+    }
+  }
+
+  const customerBadge = customer
+    ? `<div class="customer-badge">Kundenr. ${esc(customer)}</div>` : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Tidsrapport — ${esc(userName)}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           font-size: 13px; color: #111; background: #fff; padding: 40px 48px; max-width: 720px; margin: 0 auto; }
+
+    .report-header { display: flex; justify-content: space-between; align-items: flex-start;
+                     padding-bottom: 18px; border-bottom: 2px solid #111; margin-bottom: 28px; }
+    .report-brand { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .report-brand span { color: #e8720c; }
+    .report-meta { text-align: right; }
+    .report-meta .period { font-size: 12px; color: #555; margin-top: 3px; }
+    .report-user { font-size: 13px; font-weight: 600; }
+    .customer-badge {
+      display: inline-block;
+      background: #fff4ec; color: #e8720c;
+      border: 1px solid #f5c49a;
+      border-radius: 5px;
+      padding: 2px 10px;
+      font-size: 12px; font-weight: 700;
+      margin-top: 5px;
+      letter-spacing: 0.04em;
+    }
+
+    .day-block { margin-bottom: 22px; }
+    .day-header { display: flex; justify-content: space-between; align-items: baseline;
+                  padding: 7px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+    .day-title { font-size: 12px; font-weight: 600; text-transform: capitalize; color: #333; }
+    .day-total { font-size: 12px; font-weight: 700; color: #e8720c; }
+
+    table { width: 100%; border-collapse: collapse; }
+    tr { border-bottom: 1px solid #f0f0f0; }
+    tr:last-child { border-bottom: none; }
+    td { padding: 6px 4px; vertical-align: top; }
+    .task-name { color: #222; }
+    .duration { text-align: right; font-weight: 600; white-space: nowrap;
+                font-variant-numeric: tabular-nums; width: 80px; color: #444; }
+
+    .grand-total { display: flex; justify-content: space-between; align-items: center;
+                   margin-top: 28px; padding-top: 14px; border-top: 2px solid #111; }
+    .grand-total-label { font-size: 14px; font-weight: 700; }
+    .grand-total-value { font-size: 18px; font-weight: 700; color: #e8720c; }
+
+    .empty { color: #888; font-style: italic; padding: 20px 0; }
+    .report-footer { margin-top: 40px; font-size: 10px; color: #aaa;
+                     text-align: center; border-top: 1px solid #eee; padding-top: 12px; }
+
+    @media print {
+      body { padding: 20px 28px; }
+      .day-block { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-header">
+    <div class="report-brand">Task<span>Timer</span></div>
+    <div class="report-meta">
+      <div class="report-user">${esc(userName)}</div>
+      <div class="period">${periodLabel}</div>
+      ${customerBadge}
+    </div>
+  </div>
+
+  ${bodyHtml}
+
+  <div class="grand-total">
+    <span class="grand-total-label">Total</span>
+    <span class="grand-total-value">${fmtDuration(grandTotal)}</span>
+  </div>
+
+  <div class="report-footer">Genereret af TaskTimer · ${new Date().toLocaleDateString('da-DK')}</div>
+
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { toast('Popup blokeret — tillad popups for denne side', 'warn'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+// ── WEEK TAB ──
+async function renderWeek() {
+  const dates = weekDates(weekOffset);
+  const from = localDateStr(dates[0]), to = localDateStr(dates[4]);
+  const [y, wn] = isoWeek(dates[0]);
+  document.getElementById('weekNavLabel').textContent = `WEEK ${wn}, ${y}`;
+  const container = document.getElementById('weekDays');
+  container.innerHTML = `<div class="skel" style="height:80px;border-radius:10px;margin-bottom:8px"></div>`.repeat(3);
+  let entries = [];
+  try { entries = await apiFetch(`/entries?from=${from}&to=${to}`); } catch {}
+  const DAY = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const today = todayStr();
+  let weekTotal = 0;
+  container.innerHTML = '';
+  dates.forEach((d, i) => {
+    const dk = localDateStr(d), isToday = dk === today;
+    const dayE = entries.filter(e => e.date === dk);
+    // Today: committed entries + live timers; other days: committed entries only
+    const liveTotal = isToday ? tasks.reduce((s, t) => s + liveSec(t.id), 0) : 0;
+    const dayTotal  = isToday
+      ? dayE.reduce((s, e) => s + e.seconds, 0) + liveTotal
+      : dayE.reduce((s, e) => s + e.seconds, 0);
+    weekTotal += dayTotal;
+    const block = document.createElement('div');
+    block.className = 'day-block';
+
+    // Build entries HTML for today: committed rows + live timer rows
+    let entriesHtml;
+    if (isToday) {
+      const committedRows = dayE.map(e =>
+        `<div class="week-entry" data-eid="${e.id}">
+           <div class="we-dot" style="background:${esc(e.task_color||'#f07c28')}"></div>
+           <div class="we-body"><div class="we-task">${esc(e.task_name)}</div><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
+           <div class="we-copy" data-name="${esc(e.task_name)}" title="Copy job number"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></div>
+           <div class="we-dur">${hm(e.seconds)}</div>
+           <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
+         </div>`).join('');
+      const liveRows = tasks.filter(t => liveTimers[t.id]).map(t =>
+        `<div class="week-entry">
+           <div class="we-dot" style="background:${esc(t.color||'#f07c28')}"></div>
+           <div class="we-body"><div class="we-task">${esc(t.name)}</div><div class="we-meta">Running…</div></div>
+           <div class="we-dur">${hm(liveSec(t.id))}</div>
+         </div>`).join('');
+      entriesHtml = committedRows + liveRows || '<div class="week-empty">No time yet</div>';
+    } else {
+      entriesHtml = dayE.length === 0
+        ? '<div class="week-empty">No entries</div>'
+        : dayE.map(e =>
+          `<div class="week-entry" data-eid="${e.id}">
+           <div class="we-dot" style="background:${esc(e.task_color||'#f07c28')}"></div>
+           <div class="we-body"><div class="we-task">${esc(e.task_name)}</div><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
+           <div class="we-copy" data-name="${esc(e.task_name)}" title="Copy job number"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></div>
+           <div class="we-dur">${hm(e.seconds)}</div>
+           <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
+           </div>`).join('');
+    }
+    block.innerHTML = `
+      <div class="day-header${isToday ? ' today-hdr' : ''}">
+        <div><div class="day-name">${DAY[i]}</div><div class="day-date">${d.getDate()}/${d.getMonth()+1}</div></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${dayTotal > 0 ? `<div class="day-total">${hm(dayTotal)}</div>` : ''}
+          ${!isToday ? `<button class="day-add-btn" data-adate="${dk}" title="Add entry">＋</button>` : ''}
+        </div>
+      </div>
+      <div class="day-entries">${entriesHtml}</div>`;
+    block.querySelectorAll('.week-entry[data-eid]').forEach(row => {
+      row.addEventListener('click', e => { if (e.target.closest('.we-del') || e.target.closest('.we-copy')) return; editEntry(parseInt(row.dataset.eid)); });
+    });
+    block.querySelectorAll('.we-del[data-did]').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); deleteWeekEntry(parseInt(btn.dataset.did)); });
+    });
+    block.querySelectorAll('.we-copy[data-name]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const name = btn.dataset.name;
+        const match = name.match(/^(\d{6})/);
+        copyToClipboard(match ? match[1] : name);
+        btn.closest('.week-entry').classList.add('copied');
+      });
+    });
+    const addBtn = block.querySelector('.day-add-btn');
+    if (addBtn) addBtn.addEventListener('click', () => openAddEntry(addBtn.dataset.adate));
+    container.appendChild(block);
+  });
+  document.getElementById('weekTotal').textContent = hm(weekTotal);
+  // weekSecCache: committed entries for the full week + today's uncommitted/live
+  // renderBottomStats adds live totalSec on top, so store only committed here
+  weekSecCache = { seconds: entries.reduce((s, e) => s + e.seconds, 0), fetchedAt: Date.now() };
+  renderBottomStats();
+}
+
+// ── EDIT COMMITTED ENTRY ──
+async function editEntry(id) {
+  let entry;
+  try { entry = await apiFetch(`/entries/${id}`); } catch { toast('Could not load entry', 'err'); return; }
+  document.getElementById('editEntryId').value    = entry.id;
+  document.getElementById('editEntryStart').value = entry.start_time;
+  document.getElementById('editEntryEnd').value   = entry.end_time;
+  document.getElementById('editEntryNote').value  = entry.note || '';
+  document.getElementById('editEntryTask').innerHTML = tasks.map(t =>
+    `<option value="${t.id}"${t.id === entry.task_id ? ' selected' : ''}>${esc(t.name)}</option>`).join('');
+  hideError('editEntryError'); openModal('editEntryModal');
+}
+
+async function saveEditEntry() {
+  const id     = parseInt(document.getElementById('editEntryId').value);
+  const start  = document.getElementById('editEntryStart').value;
+  const end    = document.getElementById('editEntryEnd').value;
+  const note   = document.getElementById('editEntryNote').value.trim();
+  const taskId = parseInt(document.getElementById('editEntryTask').value);
+  if (!start || !end) { showError('editEntryError', 'Please fill in start and end time'); return; }
+  if (start >= end)   { showError('editEntryError', 'End time must be after start time'); return; }
+  setBtnLoading('saveEntryBtn', true);
+  try {
+    await apiFetch(`/entries/${id}`, { method: 'PATCH', body: { start_time: start, end_time: end, note, task_id: taskId } });
+    closeModal('editEntryModal'); renderWeek(); toast('Entry updated', 'ok');
+  } catch (e) { showError('editEntryError', e.message); }
+  setBtnLoading('saveEntryBtn', false);
+}
+
+function deleteWeekEntry(id) {
+  showConfirm('Delete entry', 'This entry is saved permanently. Are you sure you want to delete it?', async () => {
+    try { await apiFetch(`/entries/${id}`, { method: 'DELETE' }); renderWeek(); toast('Entry deleted', 'ok'); }
+    catch (e) { toast(e.message, 'err'); }
+  });
+}
+
+// ── ADD ENTRY ──
+function openAddEntry(dateStr) {
+  document.getElementById('addEntryDate').value  = dateStr;
+  document.getElementById('addEntryStart').value = '09:00';
+  document.getElementById('addEntryEnd').value   = '10:00';
+  document.getElementById('addEntryNote').value  = '';
+  document.getElementById('addEntryTask').innerHTML = tasks.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  hideError('addEntryError'); openModal('addEntryModal');
+}
+
+async function saveAddEntry() {
+  const dateStr = document.getElementById('addEntryDate').value;
+  const start   = document.getElementById('addEntryStart').value;
+  const end     = document.getElementById('addEntryEnd').value;
+  const note    = document.getElementById('addEntryNote').value.trim();
+  const taskId  = parseInt(document.getElementById('addEntryTask').value);
+  if (!start || !end) { showError('addEntryError', 'Please fill in start and end time'); return; }
+  if (start >= end)   { showError('addEntryError', 'End time must be after start time'); return; }
+  setBtnLoading('saveAddEntryBtn', true);
+  try {
+    await apiFetch('/entries', { method: 'POST', body: { task_id: taskId, date: dateStr, start_time: start, end_time: end, note, committed: true } });
+    closeModal('addEntryModal'); renderWeek(); toast('Entry added', 'ok');
+  } catch (e) { showError('addEntryError', e.message); }
+  setBtnLoading('saveAddEntryBtn', false);
+}
+
+// ── SETTINGS ──
+function loadSettingsForm() {
+  if (!me) return;
+  document.getElementById('sName').value     = me.name  || '';
+  document.getElementById('sEmail').value    = me.email || '';
+  document.getElementById('sDayGoal').value  = dayGoalH;
+  document.getElementById('sWeekGoal').value = weekGoalH;
+  document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
+  loadApiKeyStatus();
+}
+
+async function saveProfile() {
+  const name = document.getElementById('sName').value.trim();
+  if (!name) { toast('Name cannot be empty', 'err'); return; }
+  setBtnLoading('saveProfileBtn', true);
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { name } });
+    me.name = updated.name; 
+    toast('Profile saved', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('saveProfileBtn', false);
+}
+
+async function saveGoals() {
+  const dgRaw = document.getElementById('sDayGoal').value;
+  const wgRaw = document.getElementById('sWeekGoal').value;
+  const dehRaw = document.getElementById('sDayEnd').value; // "HH:MM"
+  const dg = parseFloat(dgRaw), wg = parseFloat(wgRaw);
+  const [dehH, dehM] = dehRaw ? dehRaw.split(':').map(Number) : [17, 0];
+  if (!dgRaw  || isNaN(dg)  || dg < 0.5 || dg > 24) { toast('Daily goal must be 0.5–24 hours', 'err'); return; }
+  if (!wgRaw  || isNaN(wg)  || wg < 1   || wg > 80)  { toast('Weekly goal must be 1–80 hours', 'err');  return; }
+  if (!dehRaw || isNaN(dehH) || dehH < 0 || dehH > 23) { toast('Ugyldig auto-stop tid', 'err'); return; }
+  if (isNaN(dehM) || dehM < 0 || dehM > 59)            { toast('Ugyldig auto-stop tid', 'err'); return; }
+  setBtnLoading('saveGoalsBtn', true);
+  try {
+    await apiFetch('/auth/me', { method: 'PATCH', body: { day_end_hour: dehH, day_end_minute: dehM } });
+    dayGoalH = dg; weekGoalH = wg;
+    localStorage.setItem('tt_dayGoal', dg); localStorage.setItem('tt_weekGoal', wg);
+    me.day_end_hour = dehH; me.day_end_minute = dehM;
+    scheduleAutoStop(); renderBottomStats();
+    toast('Goals saved', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('saveGoalsBtn', false);
+}
+
+async function changePassword() {
+  const cur = document.getElementById('sCurPwd').value;
+  const nw  = document.getElementById('sNewPwd').value;
+  if (!cur || !nw) { showError('pwdError', 'Please fill in both fields'); return; }
+  if (nw.length < 6) { showError('pwdError', 'New password must be at least 6 characters'); return; }
+  setBtnLoading('changePwdBtn', true);
+  try {
+    await apiFetch('/auth/me', { method: 'PATCH', body: { current_password: cur, new_password: nw } });
+    document.getElementById('sCurPwd').value = ''; document.getElementById('sNewPwd').value = '';
+    hideError('pwdError'); toast('Password changed', 'ok');
+  } catch (e) { showError('pwdError', e.message); }
+  setBtnLoading('changePwdBtn', false);
+}
+
+// ── API KEY ──
+async function loadApiKeyStatus() {
+  try {
+    const res = await apiFetch('/auth/api-key');
+    document.getElementById('apiKeyStatus').textContent = res.hasKey
+      ? '✓ API-nøgle er aktiv'
+      : 'Ingen aktiv API-nøgle';
+    document.getElementById('revokeApiKeyBtn').style.display = res.hasKey ? '' : 'none';
+  } catch {}
+}
+
+async function generateApiKey() {
+  setBtnLoading('generateApiKeyBtn', true);
+  try {
+    const res = await apiFetch('/auth/api-key', { method: 'POST' });
+    document.getElementById('apiKeyValue').value = res.key;
+    document.getElementById('apiKeyDisplay').style.display = '';
+    document.getElementById('apiKeyStatus').textContent = '✓ API-nøgle er aktiv';
+    document.getElementById('revokeApiKeyBtn').style.display = '';
+    toast('API-nøgle genereret — kopiér den nu!', 'warn');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('generateApiKeyBtn', false);
+}
+
+async function revokeApiKey() {
+  if (!confirm('Slet API-nøglen? Chrome extensionen vil stoppe med at virke.')) return;
+  setBtnLoading('revokeApiKeyBtn', true);
+  try {
+    await apiFetch('/auth/api-key', { method: 'DELETE' });
+    document.getElementById('apiKeyDisplay').style.display = 'none';
+    document.getElementById('apiKeyValue').value = '';
+    document.getElementById('apiKeyStatus').textContent = 'Ingen aktiv API-nøgle';
+    document.getElementById('revokeApiKeyBtn').style.display = 'none';
+    toast('API-nøgle slettet', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('revokeApiKeyBtn', false);
+}
+// ── EXTENSION POLLING ──
+// Checks every 5s for tasks created by Chrome extension with pending_start=1
+async function pollExtensionPending() {
+  if (!token) return;
+  try {
+    const pending = await apiFetch('/extension/pending');
+    if (!pending.length) return;
+    await loadTasks();
+    for (const task of pending) {
+      await stopAllTimers();
+      startTimer(task.id);
+      toast(`▶ "${task.name}" startet fra extension`, 'ok');
+    }
+    renderTaskList();
+  } catch { /* silent */ }
+}
+
+function startExtensionPoll() {
+  if (extensionPollRef) return;
+  extensionPollRef = setInterval(pollExtensionPending, 5000);
+}
+
+function stopExtensionPoll() {
+  clearInterval(extensionPollRef);
+  extensionPollRef = null;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text)
+      .then(() => toast('Kopieret', 'ok'))
+      .catch(() => fallbackCopy(text));
+  }
+  fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    toast('Kopieret', 'ok');
+  } catch {
+    toast('Kopiering fejlede', 'err');
+  }
+  document.body.removeChild(ta);
+}
+
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent   = msg;
+  const okOld = document.getElementById('confirmOkBtn'), canOld = document.getElementById('confirmCancelBtn');
+  const ok = okOld.cloneNode(true), can = canOld.cloneNode(true);
+  okOld.replaceWith(ok); canOld.replaceWith(can);
+  const close = () => document.getElementById('confirmDialog').classList.remove('show');
+  ok.addEventListener('click', () => { close(); onOk(); });
+  can.addEventListener('click', close);
+  document.getElementById('confirmDialog').classList.add('show');
+  can.focus();
+}
+
+// ── EVENT LISTENERS ──
+function setupEventListeners() {
+  // Auth
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('regBtn').addEventListener('click', doRegister);
+  document.getElementById('toRegisterLink').addEventListener('click', toggleAuth);
+  document.getElementById('toLoginLink').addEventListener('click', toggleAuth);
+  document.getElementById('forgotPasswordLink').addEventListener('click', openForgotModal);
+  document.getElementById('forgotCancelBtn').addEventListener('click', () => closeModal('forgotModal'));
+  document.getElementById('forgotRequestBtn').addEventListener('click', forgotRequestCode);
+  document.getElementById('forgotBackBtn').addEventListener('click', () => {
+    document.getElementById('forgotStep2').style.display = 'none';
+    document.getElementById('forgotStep1').style.display = '';
+  });
+  document.getElementById('forgotResetBtn').addEventListener('click', forgotResetPassword);
+  document.getElementById('forgotDoneBtn').addEventListener('click', () => {
+    closeModal('forgotModal');
+    // Pre-fill email on login form
+    document.getElementById('loginEmail').value = _forgotEmail;
+    document.getElementById('loginPassword').focus();
+  });
+  document.getElementById('forgotModal').addEventListener('click', e => {
+    if (e.target.id === 'forgotModal') closeModal('forgotModal');
+  });
+  ['loginEmail','loginPassword'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doLogin(); } }));
+  document.getElementById('regPassword').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doRegister(); } });
+  document.getElementById('forgotEmail').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); forgotRequestCode(); } });
+  document.getElementById('forgotToken').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); forgotResetPassword(); } });
+  document.getElementById('forgotNewPassword').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); forgotResetPassword(); } });
+
+  // Header
+  document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+
+  // Burger menu
+  document.getElementById('burgerBtn').addEventListener('click', openDrawer);
+  document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
+  document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
+  document.getElementById('drawerThemeBtn').addEventListener('click', () => { toggleTheme(); closeDrawer(); });
+  document.getElementById('drawerLogoutBtn').addEventListener('click', () => { closeDrawer(); logout(); });
+  document.querySelectorAll('.drawer-item[data-tab]').forEach(item =>
+    item.addEventListener('click', () => { switchTab(item.dataset.tab); closeDrawer(); }));
+
+  // Timer
+  document.getElementById('newTaskBtn').addEventListener('click', showNewTask);
+  document.getElementById('resetDayBtn').addEventListener('click', showResetConfirm);
+  document.getElementById('selectModeBtn').addEventListener('click', () => {
+    if (selectionMode) exitSelectionMode(); else enterSelectionMode();
+  });
+  document.getElementById('bulkSelectAllBtn').addEventListener('click', bulkSelectAll);
+  document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
+  document.getElementById('bulkCancelBtn').addEventListener('click', exitSelectionMode);
+  document.getElementById('addTaskBtn').addEventListener('click', submitNewTask);
+  document.getElementById('cancelNewTaskBtn').addEventListener('click', hideNewTask);
+  document.getElementById('newTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitNewTask(); } });
+  document.getElementById('resetYesBtn').addEventListener('click', doResetDay);
+  document.getElementById('cancelResetBtn').addEventListener('click', hideResetConfirm);
+  document.getElementById('endDayBtn').addEventListener('click', showEndDay);
+
+  // Week
+  document.getElementById('weekPillBtn').addEventListener('click', () => switchTab('week'));
+
+  document.getElementById('prevWeekBtn').addEventListener('click', () => { weekOffset--; renderWeek(); });
+  document.getElementById('nextWeekBtn').addEventListener('click', () => { weekOffset++; renderWeek(); });
+  document.getElementById('todayWeekBtn').addEventListener('click', () => { weekOffset = 0; renderWeek(); });
+
+  // Settings
+  document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+  document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
+  document.getElementById('changePwdBtn').addEventListener('click', changePassword);
+  document.getElementById('generateApiKeyBtn').addEventListener('click', generateApiKey);
+  document.getElementById('revokeApiKeyBtn').addEventListener('click', revokeApiKey);
+  document.getElementById('copyApiKeyBtn').addEventListener('click', () => {
+    const val = document.getElementById('apiKeyValue').value;
+    copyToClipboard(val);
+  });
+
+  // Gradient tab
+  document.getElementById('saveGradientBtn').addEventListener('click', saveGradient);
+  document.getElementById('resetGradientBtn').addEventListener('click', resetGradient);
+  ['gDarkFrom','gDarkTo','gLightFrom','gLightTo'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateGradientPreview);
+  });
+
+  // Background images
+  document.getElementById('bgFileInput').addEventListener('change', handleBgFileInput);
+  document.getElementById('bgUploadBtn').addEventListener('click', () => document.getElementById('bgFileInput').click());
+  document.getElementById('bgOverlayPicker').addEventListener('click', e => {
+    const opt = e.target.closest('.bg-overlay-opt');
+    if (opt) selectBgOverlay(opt.dataset.overlay);
+  });
+
+  // End day modal
+  document.getElementById('cancelEndDayBtn').addEventListener('click', () => closeModal('endDayModal'));
+  document.getElementById('confirmEndDayBtn').addEventListener('click', confirmEndDay);
+  document.getElementById('endDayModal').addEventListener('click', e => { if (e.target.id === 'endDayModal') closeModal('endDayModal'); });
+  document.getElementById('endDayModal').addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal('endDayModal');
+    if (e.key === 'Enter') { e.preventDefault(); confirmEndDay(); }
+  });
+
+  // Edit time modal
+  document.getElementById('cancelEditTimeBtn').addEventListener('click', () => closeModal('editTimeModal'));
+  document.getElementById('saveEditTimeBtn').addEventListener('click', saveEditTime);
+  document.getElementById('editTimeModal').addEventListener('click', e => { if (e.target.id === 'editTimeModal') closeModal('editTimeModal'); });
+  document.getElementById('editTimeModal').addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal('editTimeModal');
+    if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); saveEditTime(); }
+  });
+
+  // Budget modal (◎ button)
+  document.getElementById('cancelBudgetModalBtn').addEventListener('click', () => closeModal('budgetModal'));
+  document.getElementById('saveBudgetModalBtn').addEventListener('click', saveBudgetModal);
+  document.getElementById('budgetModal').addEventListener('click', e => { if (e.target.id === 'budgetModal') closeModal('budgetModal'); });
+  document.getElementById('budgetModal').addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal('budgetModal');
+    if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); saveBudgetModal(); }
+  });
+
+  // Edit entry modal
+  document.getElementById('cancelEditEntryBtn').addEventListener('click', () => closeModal('editEntryModal'));
+  document.getElementById('saveEntryBtn').addEventListener('click', saveEditEntry);
+  document.getElementById('editEntryModal').addEventListener('click', e => { if (e.target.id === 'editEntryModal') closeModal('editEntryModal'); });
+  document.getElementById('editEntryModal').addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal('editEntryModal');
+    if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); saveEditEntry(); }
+  });
+
+  // Add entry modal
+  document.getElementById('cancelAddEntryBtn').addEventListener('click', () => closeModal('addEntryModal'));
+  document.getElementById('saveAddEntryBtn').addEventListener('click', saveAddEntry);
+  document.getElementById('addEntryModal').addEventListener('click', e => { if (e.target.id === 'addEntryModal') closeModal('addEntryModal'); });
+  document.getElementById('addEntryModal').addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal('addEntryModal');
+    if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); saveAddEntry(); }
+  });
+
+  // Confirm dialog
+  document.getElementById('confirmDialog').addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('confirmDialog').classList.remove('show');
+    if (e.key === 'Enter')  { e.preventDefault(); document.getElementById('confirmOkBtn').click(); }
+  });
+
+  // Shortcuts modal
+  document.getElementById('shortcutsDrawerBtn').addEventListener('click', () => {
+    closeDrawer();
+    openModal('shortcutsModal');
+  });
+  document.getElementById('closeShortcutsBtn').addEventListener('click', () => closeModal('shortcutsModal'));
+  document.getElementById('shortcutsModal').addEventListener('click', e => {
+    if (e.target.id === 'shortcutsModal') closeModal('shortcutsModal');
+  });
+
+  document.getElementById('exportDrawerBtn').addEventListener('click', openExportModal);
+  document.getElementById('exportGenerateBtn').addEventListener('click', generateExport);
+  document.getElementById('exportCancelBtn').addEventListener('click', () => closeModal('exportModal'));
+  document.getElementById('exportModal').addEventListener('click', e => {
+    if (e.target.id === 'exportModal') closeModal('exportModal');
+  });
+
+  // Customer autocomplete
+  const custInput = document.getElementById('exportCustomer');
+  custInput.addEventListener('input', () => {
+    const q = custInput.value.trim();
+    clearTimeout(_customerDebounce);
+    if (!q) { fetchCustomerSuggestions(''); return; }
+    _customerDebounce = setTimeout(() => fetchCustomerSuggestions(q), 200);
+  });
+  custInput.addEventListener('focus', () => fetchCustomerSuggestions(custInput.value.trim()));
+  custInput.addEventListener('blur', () => {
+    setTimeout(() => { document.getElementById('customerDropdown').style.display = 'none'; }, 150);
+  });
+  custInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); generateExport(); }
+  });
+
+  // Logo/brand → back to timer
+  document.getElementById('appBrand').addEventListener('click', () => switchTab('timer'));
+
+  // ── BOX event listeners ──
+  document.getElementById('newNoteBtn').addEventListener('click', () => openNoteEditor(null));
+
+  document.getElementById('noteEditorClose').addEventListener('click', closeNoteEditor);
+  document.getElementById('noteEditorOverlay').addEventListener('click', e => {
+    if (e.target.id === 'noteEditorOverlay') closeNoteEditor();
+  });
+
+  document.getElementById('noteSaveBtn').addEventListener('click', saveNote);
+
+  document.getElementById('noteDelBtn').addEventListener('click', deleteNote);
+
+  document.getElementById('notePinBtn').addEventListener('click', () => {
+    _notePinned = !_notePinned;
+    const btn = document.getElementById('notePinBtn');
+    btn.classList.toggle('active', _notePinned);
+    btn.innerHTML = `<span class="btn-text"><svg viewBox="0 0 24 24" width="13" height="13" fill="${_notePinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg>${_notePinned ? 'Pinned' : 'Pin'}</span>`;
+  });
+
+  document.getElementById('noteColorPicker').addEventListener('click', e => {
+    const dot = e.target.closest('.note-color-dot');
+    if (!dot) return;
+    _noteColor = dot.dataset.color;
+    document.querySelectorAll('.note-color-dot').forEach(d => d.classList.toggle('active', d === dot));
+  });
+
+  // Search — debounced 280ms
+  document.getElementById('boxSearch').addEventListener('input', e => {
+    const q = e.target.value.trim();
+    document.getElementById('boxSearchClear').classList.toggle('show', q.length > 0);
+    clearTimeout(_noteSearchTimer);
+    _noteSearchTimer = setTimeout(() => loadNotes(q), 280);
+  });
+
+  document.getElementById('boxSearchClear').addEventListener('click', () => {
+    document.getElementById('boxSearch').value = '';
+    document.getElementById('boxSearchClear').classList.remove('show');
+    clearTimeout(_noteSearchTimer);
+    loadNotes('');
+  });
+
+  // Ctrl+Enter saves note from textarea
+  document.getElementById('noteEditorContent').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveNote(); }
+  });
+
+  // Auto-commit on page close/refresh — ensures no data is lost
+  window.addEventListener('beforeunload', () => {
+    persistTimers();
+    // Synchronous commit of today's entries so data survives browser close
+    if (token) {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', API + '/entries/end-day', false); // false = synchronous
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.send('{}');
+      } catch {}
+    }
+  });
+
+  // Online/offline handling
+  window.addEventListener('offline', () => setOffline(true));
+  window.addEventListener('online', () => {
+    refreshFromServer();
+  });
+  // Check initial state
+  if (!navigator.onLine) setOffline(true);
+
+  // Global Escape
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeDrawer();
+    closeModal('shortcutsModal');
+    closeModal('exportModal');
+    closeModal('gradientModal');
+    closeNoteEditor();
+    if (selectionMode) exitSelectionMode();
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') { e.target.blur(); }
+    hideNewTask(); hideResetConfirm();
+    ['endDayModal','editEntryModal','addEntryModal','editTimeModal','budgetModal'].forEach(closeModal);
+    document.getElementById('confirmDialog').classList.remove('show');
+  });
+
+  // Global keyboard shortcuts (Space, N)
+  document.addEventListener('keydown', e => {
+    // Ignore when typing in inputs, textareas, selects, or any modal is open
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (document.querySelector('.overlay.show, .confirm-overlay.show')) return;
+    // Only fire on Timer tab
+    if (document.getElementById('timerTab').style.display === 'none') return;
+
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (!selectedTaskId) {
+        // Auto-select first running task, or first task
+        const running = tasks.find(t => liveTimers[t.id]);
+        const target  = running || tasks[0];
+        if (target) selectTask(target.id);
+        return;
+      }
+      const isRunning = !!liveTimers[selectedTaskId];
+      if (isRunning) stopTimer(selectedTaskId).then(() => renderTaskList());
+      else           startTimer(selectedTaskId);
+    }
+
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      showNewTask();
+    }
+  });
+}
+
+// ── DRAWER ──
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ── TAB SWITCHING ──
+function switchTab(name) {
+  ['timerTab','weekTab','settingsTab','boxTab','gradientTab'].forEach(id => document.getElementById(id).style.display = 'none');
+  const map = { timer: 'timerTab', week: 'weekTab', settings: 'settingsTab', box: 'boxTab', gradient: 'gradientTab' };
+  const el = document.getElementById(map[name]);
+  el.style.display = 'flex'; el.style.flexDirection = 'column';
+  document.querySelectorAll('.drawer-item[data-tab]').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  if (name === 'week')     renderWeek();
+  if (name === 'settings') loadSettingsForm();
+  if (name === 'box')      loadNotes();
+  if (name === 'gradient') {
+    loadGradientForm(me ? me.preferences : null);
+    loadBgImages();
+    const activeOverlay = (me && me.preferences && me.preferences.bgOverlay) || 'dots-sm';
+    document.querySelectorAll('#bgOverlayPicker .bg-overlay-opt').forEach(el =>
+      el.classList.toggle('active', el.dataset.overlay === activeOverlay));
+  }
+}
+
+// ── MODALS ──
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── PAGE ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // Show the column-separator shell only on the app page (not auth)
+  document.getElementById('appShell').classList.toggle('visible', id === 'appPage');
+}
+
+// ── LOADING ──
+function setBtnLoading(id, loading) {
+  const btn = document.getElementById(id); if (!btn) return;
+  btn.classList.toggle('loading', loading); btn.disabled = loading;
+}
+function setElLoading(id, loading) {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.toggle('loading', loading);
+}
+
+// ── UTILS ──
+function todayStr() { return localDateStr(new Date()); }
+function localDateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+function weekDates(off) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dow = now.getDay() || 7;
+  const mon = new Date(now); mon.setDate(now.getDate() - dow + 1 + off * 7);
+  return Array.from({length:5}, (_, i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function isoWeek(d) {
+  const u = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  u.setUTCDate(u.getUTCDate() + 4 - (u.getUTCDay() || 7));
+  const ys = new Date(Date.UTC(u.getUTCFullYear(), 0, 1));
+  return [u.getUTCFullYear(), Math.ceil(((u - ys) / 86400000 + 1) / 7)];
+}
+
+function hms(s) {
+  s = Math.max(0, Math.floor(s));
+  return `${pad(Math.floor(s/3600))}:${pad(Math.floor((s%3600)/60))}:${pad(s%60)}`;
+}
+function hm(s) {
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h === 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showError(id, msg) { const el = document.getElementById(id); if (!el) return; el.textContent = msg; el.classList.add('show'); }
+function hideError(id)      { const el = document.getElementById(id); if (!el) return; el.classList.remove('show'); }
+
+let _tt;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>
