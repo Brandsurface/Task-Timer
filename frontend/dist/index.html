@@ -1747,6 +1747,7 @@ function applyBackground(prefs) {
 async function loadBgImages() {
   try { _bgImages = await apiFetch('/background-images'); } catch { _bgImages = []; }
   renderBgGallery();
+  if (me && me.preferences && me.preferences.bgImage) startSlideshow(me.preferences);
 }
 
 function renderBgGallery() {
@@ -2018,6 +2019,7 @@ async function init() {
     cacheSet('tt_me', me);
     applyGradient(me.preferences);
     applyBackground(me.preferences);
+    loadBgImages();
     await loadTasks();
     await loadTodayEntries();
     await fetchWeekTotal();
