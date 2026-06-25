@@ -70,7 +70,9 @@ function getMailer() {
 }
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+// 5mb (default is 100kb) — preferences PATCH can carry larger payloads.
+// Without this, saving a selected background returned "request entity too large".
+app.use(express.json({ limit: '5mb' }));
 // ── ICONS & MANIFEST ──
 const ICONS_DIR = path.join(__dirname, 'public', 'icons');
 
