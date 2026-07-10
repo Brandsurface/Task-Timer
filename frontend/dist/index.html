@@ -2387,6 +2387,7 @@ async function startTimer(taskId) {
   persistTimers();
   pingStart();
   renderTaskList();
+  updateTabTitle();
   // Brief pop animation on the card
   const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
   if (card) { card.classList.add('pop'); setTimeout(() => card.classList.remove('pop'), 300); }
@@ -2398,6 +2399,7 @@ async function stopTimer(taskId, skipPersist = false) {
   delete liveTimers[taskId];
   if (!skipPersist) persistTimers();
   pingStop();
+  updateTabTitle();
   if (elapsed < 10) { renderTaskList(); return; }
   const s = new Date(lt.startedAt), e = new Date();
   const dateStr = localDateStr(s);
@@ -2469,7 +2471,17 @@ function startTicker() {
   clearInterval(tickerRef);
   tickerRef = setInterval(() => {
     if (Object.keys(liveTimers).length > 0) { renderTimerValues(); renderBottomStats(); }
+    updateTabTitle();
   }, 1000);
+}
+
+// Show the running timer's elapsed time in the browser tab title
+function updateTabTitle() {
+  const runningId = Object.keys(liveTimers)[0];
+  if (runningId === undefined) { document.title = 'TaskTimer'; return; }
+  const task = tasks.find(t => t.id === parseInt(runningId));
+  const sec  = liveSec(parseInt(runningId));
+  document.title = task ? `${hms(sec)} · ${task.name} — TaskTimer` : `${hms(sec)} — TaskTimer`;
 }
 
 function scheduleAutoStop() {
