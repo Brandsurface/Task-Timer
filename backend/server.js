@@ -36,7 +36,8 @@ const upload = multer({
 
 // ── SMTP / EMAIL CONFIG ──
 // Set these environment variables to enable email delivery.
-// Without them, the reset code is returned in the API response (admin flow).
+// Without them, the reset code goes to the server log, and only an
+// authenticated admin can retrieve it via the API.
 const SMTP_CONFIG = {
   host:    process.env.SMTP_HOST || null,
   port:    parseInt(process.env.SMTP_PORT || '587'),
@@ -227,14 +228,26 @@ app.post('/api/auth/login', (req, res) => {
 // ── PASSWORD RESET (self-hosted: admin generates token, shares it out-of-band) ──
 
 // Step 1 — request reset token (any user can request for their own email)
-// Admin can call this for any email to get the token back
+// Only an authenticated admin gets the code back in the response; everyone
+// else gets a generic message. Without this check, anyone on the network
+// could take over any account by requesting a code for its email.
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
+  let isAdmin = false;
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    try { isAdmin = jwt.verify(header.slice(7), JWT_SECRET).role === 'admin'; } catch {}
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
-  // Always respond success to prevent email enumeration — but only do work if user exists
-  if (!user) return res.json({ message: 'If that address is registered, a reset code has been sent.' });
+  // Always respond success to prevent email enumeration — but only do work if
+  // user exists. The message must match the known-email response word for word,
+  // otherwise the difference reveals which emails are registered.
+  if (!user) return res.json({ message: SMTP_ENABLED
+    ? 'If that address is registered, a reset code has been sent.'
+    : 'If that address is registered, a reset code has been generated. Ask your administrator for it.' });
 
   // Generate an 8-char uppercase hex token
   const token   = crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -271,13 +284,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
     return res.json({ message: `Reset code sent to ${user.email}. Check your inbox.` });
   } else {
-    // ── ADMIN MODE: no SMTP configured — return code directly ──
+    // ── NO SMTP: the code goes to the server log, and only an authenticated
+    // admin gets it in the response (to share with the user out-of-band) ──
     console.log(`[TaskTimer] Password reset code for ${user.email}: ${token} (expires ${expires})`);
-    return res.json({
-      message:   'No email server configured. Share this code with the user.',
-      resetCode: token,
-      expiresAt: expires,
-    });
+    if (isAdmin) {
+      return res.json({
+        message:   'No email server configured. Share this code with the user.',
+        resetCode: token,
+        expiresAt: expires,
+      });
+    }
+    return res.json({ message: 'If that address is registered, a reset code has been generated. Ask your administrator for it.' });
   }
 });
 
@@ -1174,6 +1191,27 @@ app.use((err, req, res, next) => {
   const status = err.code === 'LIMIT_FILE_SIZE' ? 400 : 500;
   res.status(status).json({ error: err.message || 'Server error' });
 });
+
+// Known non-secrets: the code default and the docker-compose.yml placeholder.
+// Both are public in the repo, so tokens signed with them can be forged.
+const DEFAULT_JWT_SECRETS = [
+  'tasktimer-change-in-production-please',
+  'CHANGE_THIS_TO_A_LONG_RANDOM_STRING_MINIMUM_32_CHARS',
+];
+if (DEFAULT_JWT_SECRETS.includes(JWT_SECRET)) {
+  console.warn(
+    '\n' +
+    '╔════════════════════════════════════════════════════════════════════╗\n' +
+    '║  ADVARSEL: JWT_SECRET er ikke sat!                                   ║\n' +
+    '║                                                                      ║\n' +
+    '║  Serveren kører med en offentligt kendt standardværdi, så login-     ║\n' +
+    '║  tokens kan forfalskes af alle på netværket.                         ║\n' +
+    '║                                                                      ║\n' +
+    '║  Sæt JWT_SECRET i docker-compose.yml til en lang tilfældig streng,   ║\n' +
+    '║  fx output fra:  openssl rand -hex 32                                ║\n' +
+    '╚════════════════════════════════════════════════════════════════════╝\n'
+  );
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`TaskTimer API running on port ${PORT}`);
