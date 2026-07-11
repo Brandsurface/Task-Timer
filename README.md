@@ -94,12 +94,21 @@ Alternativt kan du bruge Synology's Container Manager app:
 
 ## Backup
 
-Databasen er én fil:
+Appen tager automatisk en konsistent backup af databasen hver nat kl. 03 til:
 ```
-tasktimer/data/tasktimer.db
+tasktimer/data/backups/tasktimer-ÅÅÅÅ-MM-DD-TTMM.db
 ```
 
-Kopiér denne fil for at tage backup. Synology Hyper Backup kan inkludere `/volume1/docker/tasktimer/data/` automatisk.
+Som standard gemmes kun den nyeste backup (gårsdagens overskrives). Antallet
+kan ændres i admin-panelet under **Dashboard → Backup**, hvor du også kan se
+hvornår sidste backup kørte og tage en manuel backup med det samme.
+
+Lad Synology Hyper Backup inkludere `/volume1/docker/tasktimer/data/` — så
+kommer både databasen og de natlige backups med.
+
+**Vigtigt:** Kopiér ikke `tasktimer.db` direkte mens serveren kører — databasen
+bruger WAL-mode, så en live-kopi kan mangle de nyeste registreringer. Brug
+filerne i `backups/`-mappen i stedet; de er altid konsistente.
 
 ---
 

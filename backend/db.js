@@ -79,6 +79,14 @@ if (!userCols.includes('api_key')) {
   db.exec('ALTER TABLE users ADD COLUMN api_key TEXT');
 }
 
+// App-level settings (key/value) — backup retention, scheduler state etc.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+`);
+
 // Notes table (Box feature)
 db.exec(`
   CREATE TABLE IF NOT EXISTS notes (
