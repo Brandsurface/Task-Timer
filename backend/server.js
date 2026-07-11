@@ -405,7 +405,7 @@ app.post('/api/tasks', auth, (req, res) => {
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
 
   const dup = findDuplicateTask(req.user.id, name);
-  if (dup) return res.status(409).json({ error: `Der findes allerede et job med navnet "${dup.name}"` });
+  if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
 
   // New tasks go to the top: take the lowest sort_order and subtract 1.
   // O(1) — preserves every existing task's order without mass updates.
@@ -427,7 +427,7 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
     const trimmed = name.trim();
     if (!trimmed) return res.status(400).json({ error: 'Task name cannot be empty' });
     const dup = findDuplicateTask(req.user.id, trimmed, task.id);
-    if (dup) return res.status(409).json({ error: `Der findes allerede et job med navnet "${dup.name}"` });
+    if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
     updates.name = trimmed;
   }
   if (color          !== undefined) updates.color          = color;
@@ -516,7 +516,7 @@ app.get('/api/export', auth, (req, res) => {
   // Optional 6-digit customer number filter
   const customerFilter = customer ? customer.trim() : null;
   if (customerFilter && !/^\d{1,6}$/.test(customerFilter))
-    return res.status(400).json({ error: 'Kundenummer skal være op til 6 cifre' });
+    return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
 
   const rows = db.prepare(`
     SELECT e.date, t.name as task_name,
@@ -595,7 +595,7 @@ app.get('/api/export/csv', auth, (req, res) => {
 
   const customerFilter = customer ? customer.trim() : null;
   if (customerFilter && !/^\d{1,6}$/.test(customerFilter))
-    return res.status(400).json({ error: 'Kundenummer skal være op til 6 cifre' });
+    return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
 
   const rows = db.prepare(`
     SELECT e.date, t.name AS task_name,
@@ -949,7 +949,7 @@ function runBackup(trigger) {
   } catch (e) {
     try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch {}
     setSetting('backup_last_run', now.toISOString());
-    setSetting('backup_last_status', `fejl: ${e.message}`);
+    setSetting('backup_last_status', `error: ${e.message}`);
     console.error(`[TaskTimer] Backup failed (${trigger}):`, e.message);
     return { ok: false, error: e.message };
   }
@@ -976,7 +976,7 @@ app.get('/api/admin/backup', auth, adminOnly, (req, res) => {
 });
 
 app.post('/api/admin/backup', auth, adminOnly, (req, res) => {
-  const r = runBackup('manuel');
+  const r = runBackup('manual');
   if (!r.ok) return res.status(500).json({ error: r.error });
   res.json({ file: r.file, lastRun: getSetting('backup_last_run'), backups: listBackups() });
 });
@@ -984,7 +984,7 @@ app.post('/api/admin/backup', auth, adminOnly, (req, res) => {
 app.patch('/api/admin/backup', auth, adminOnly, (req, res) => {
   const keep = parseInt(req.body.keep);
   if (!Number.isInteger(keep) || keep < 1 || keep > 60)
-    return res.status(400).json({ error: 'Antal backups skal være mellem 1 og 60' });
+    return res.status(400).json({ error: 'Backup count must be between 1 and 60' });
   setSetting('backup_keep', keep);
   pruneBackups(keep);
   res.json({ keep, backups: listBackups() });
@@ -1067,7 +1067,7 @@ app.post('/api/auth/api-key', auth, (req, res) => {
   const hashed = crypto.createHash('sha256').update(raw).digest('hex');
   db.prepare('UPDATE users SET api_key = ? WHERE id = ?').run(hashed, req.user.id);
   // Return the raw key — only time it's ever visible
-  res.json({ key: raw, message: 'Gem denne nøgle — den vises kun én gang.' });
+  res.json({ key: raw, message: 'Save this key — it is only shown once.' });
 });
 
 // Revoke API key
@@ -1227,13 +1227,13 @@ if (DEFAULT_JWT_SECRETS.includes(JWT_SECRET)) {
   console.warn(
     '\n' +
     '╔════════════════════════════════════════════════════════════════════╗\n' +
-    '║  ADVARSEL: JWT_SECRET er ikke sat!                                   ║\n' +
+    '║  WARNING: JWT_SECRET is not set!                                     ║\n' +
     '║                                                                      ║\n' +
-    '║  Serveren kører med en offentligt kendt standardværdi, så login-     ║\n' +
-    '║  tokens kan forfalskes af alle på netværket.                         ║\n' +
+    '║  The server is running with a publicly known default value, so      ║\n' +
+    '║  login tokens can be forged by anyone on the network.               ║\n' +
     '║                                                                      ║\n' +
-    '║  Sæt JWT_SECRET i docker-compose.yml til en lang tilfældig streng,   ║\n' +
-    '║  fx output fra:  openssl rand -hex 32                                ║\n' +
+    '║  Set JWT_SECRET in docker-compose.yml to a long random string,      ║\n' +
+    '║  e.g. the output of:  openssl rand -hex 32                          ║\n' +
     '╚════════════════════════════════════════════════════════════════════╝\n'
   );
 }

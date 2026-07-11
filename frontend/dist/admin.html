@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="da" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -432,14 +432,14 @@ canvas { width: 100% !important; }
     <div class="login-error" id="loginError"></div>
     <div class="form-group">
       <label class="form-label">Email</label>
-      <input class="form-input" id="loginEmail" type="email" placeholder="din@email.dk" autocomplete="email" />
+      <input class="form-input" id="loginEmail" type="email" placeholder="you@email.com" autocomplete="email" />
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
       <input class="form-input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" id="loginBtn">
-      Log ind som admin
+      Sign in as admin
     </button>
   </div>
 </div>
@@ -460,7 +460,7 @@ canvas { width: 100% !important; }
         </div>
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-section">Oversigt</div>
+        <div class="nav-section">Overview</div>
         <div class="nav-item active" data-view="dashboard">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span>Dashboard</span>
@@ -472,7 +472,7 @@ canvas { width: 100% !important; }
         <div class="nav-section">Administration</div>
         <div class="nav-item" data-view="users">
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Brugere</span>
+          <span>Users</span>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -494,12 +494,12 @@ canvas { width: 100% !important; }
         <div class="topbar">
           <div>
             <div class="topbar-title">Dashboard</div>
-            <div class="topbar-sub" id="dashboardSub">Indlæser...</div>
+            <div class="topbar-sub" id="dashboardSub">Loading...</div>
           </div>
           <div class="topbar-actions">
             <button class="btn btn-ghost btn-sm" id="refreshBtn">
               <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              Opdater
+              Refresh
             </button>
           </div>
         </div>
@@ -509,22 +509,22 @@ canvas { width: 100% !important; }
             <div class="stat-card orange">
               <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
               <div class="stat-value" id="statUsers">—</div>
-              <div class="stat-label">Brugere</div>
+              <div class="stat-label">Users</div>
             </div>
             <div class="stat-card green">
               <div class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
               <div class="stat-value" id="statHours">—</div>
-              <div class="stat-label">Timer tracket</div>
+              <div class="stat-label">Hours tracked</div>
             </div>
             <div class="stat-card blue">
               <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
               <div class="stat-value" id="statEntries">—</div>
-              <div class="stat-label">Registreringer</div>
+              <div class="stat-label">Entries</div>
             </div>
             <div class="stat-card purple">
               <div class="stat-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
               <div class="stat-value" id="statActiveToday">—</div>
-              <div class="stat-label">Aktive i dag</div>
+              <div class="stat-label">Active today</div>
             </div>
             <div class="stat-card red">
               <div class="stat-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
@@ -537,8 +537,8 @@ canvas { width: 100% !important; }
           <div class="section">
             <div class="section-header">
               <div>
-                <div class="section-title">Aktivitet — seneste 30 dage</div>
-                <div class="section-sub">Timer tracket pr. dag på tværs af alle brugere</div>
+                <div class="section-title">Activity — last 30 days</div>
+                <div class="section-sub">Hours tracked per day across all users</div>
               </div>
             </div>
             <div class="chart-wrap">
@@ -552,8 +552,8 @@ canvas { width: 100% !important; }
           <div class="section">
             <div class="section-header">
               <div>
-                <div class="section-title">Brugeroversigt</div>
-                <div class="section-sub">Rangeret efter aktivitet denne uge</div>
+                <div class="section-title">User overview</div>
+                <div class="section-sub">Ranked by activity this week</div>
               </div>
             </div>
             <div class="table-wrap">
@@ -561,16 +561,16 @@ canvas { width: 100% !important; }
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Bruger</th>
-                    <th>Rolle</th>
-                    <th>Uge</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Week</th>
                     <th>Total</th>
-                    <th>Sidst aktiv</th>
+                    <th>Last active</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="dashUserTable">
-                  <tr><td colspan="7"><div class="empty"><div class="empty-sub">Indlæser...</div></div></td></tr>
+                  <tr><td colspan="7"><div class="empty"><div class="empty-sub">Loading...</div></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -581,30 +581,30 @@ canvas { width: 100% !important; }
             <div class="section-header">
               <div>
                 <div class="section-title">Backup</div>
-                <div class="section-sub">Konsistent kopi af databasen — kører automatisk hver nat kl. 03</div>
+                <div class="section-sub">Consistent copy of the database — runs automatically every night at 03:00</div>
               </div>
-              <button class="btn btn-primary btn-sm" id="backupNowBtn">Tag backup nu</button>
+              <button class="btn btn-primary btn-sm" id="backupNowBtn">Back up now</button>
             </div>
             <div class="table-wrap" style="padding:16px">
               <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">
                 <div>
-                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Sidste backup</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Last backup</div>
                   <div id="backupLastRun" style="font-size:14px;font-weight:600">—</div>
                   <div id="backupLastStatus" style="font-size:12px;margin-top:2px"></div>
                 </div>
                 <div>
-                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Antal backups der gemmes</div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Backups to keep</div>
                   <div style="display:flex;gap:8px">
                     <input class="form-input" id="backupKeep" type="number" min="1" max="60" style="width:80px;padding:6px 10px" />
-                    <button class="btn btn-ghost btn-sm" id="backupKeepSaveBtn">Gem</button>
+                    <button class="btn btn-ghost btn-sm" id="backupKeepSaveBtn">Save</button>
                   </div>
-                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px">1 = kun den nyeste beholdes (gårsdagens overskrives)</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px">1 = only the newest is kept (yesterday's is overwritten)</div>
                 </div>
               </div>
               <table>
-                <thead><tr><th>Fil</th><th>Størrelse</th></tr></thead>
+                <thead><tr><th>File</th><th>Size</th></tr></thead>
                 <tbody id="backupTable">
-                  <tr><td colspan="2" style="color:var(--text-muted)">Indlæser...</td></tr>
+                  <tr><td colspan="2" style="color:var(--text-muted)">Loading...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -617,30 +617,30 @@ canvas { width: 100% !important; }
         <div class="topbar">
           <div>
             <div class="topbar-title">Engagement</div>
-            <div class="topbar-sub">Superbrugere og uengagerede — find hvem der har brug for hjælp</div>
+            <div class="topbar-sub">Power users and disengaged — see who needs help</div>
           </div>
         </div>
         <div class="content">
           <div class="section">
             <div class="section-header">
               <div>
-                <div class="section-title">🏆 Superbrugere</div>
-                <div class="section-sub">Mest aktive denne uge</div>
+                <div class="section-title">🏆 Power users</div>
+                <div class="section-sub">Most active this week</div>
               </div>
             </div>
             <div class="engagement-grid" id="superuserGrid">
-              <div class="empty"><div class="empty-sub">Indlæser...</div></div>
+              <div class="empty"><div class="empty-sub">Loading...</div></div>
             </div>
           </div>
           <div class="section">
             <div class="section-header">
               <div>
-                <div class="section-title">💤 Uengagerede</div>
-                <div class="section-sub">Ikke tracket denne uge — overvej en snak</div>
+                <div class="section-title">💤 Disengaged</div>
+                <div class="section-sub">No tracking this week — consider a chat</div>
               </div>
             </div>
             <div class="engagement-grid" id="inactiveGrid">
-              <div class="empty"><div class="empty-sub">Indlæser...</div></div>
+              <div class="empty"><div class="empty-sub">Loading...</div></div>
             </div>
           </div>
         </div>
@@ -650,8 +650,8 @@ canvas { width: 100% !important; }
       <div class="view" id="viewUsers">
         <div class="topbar">
           <div>
-            <div class="topbar-title">Brugere</div>
-            <div class="topbar-sub">Administrer brugere, passwords og roller</div>
+            <div class="topbar-title">Users</div>
+            <div class="topbar-sub">Manage users, passwords and roles</div>
           </div>
         </div>
         <div class="content">
@@ -659,16 +659,16 @@ canvas { width: 100% !important; }
             <table>
               <thead>
                 <tr>
-                  <th>Navn / Email</th>
-                  <th>Rolle</th>
-                  <th>Oprettet</th>
-                  <th>Uge</th>
-                  <th>Sidst aktiv</th>
-                  <th>Handlinger</th>
+                  <th>Name / Email</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th>Week</th>
+                  <th>Last active</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="usersTable">
-                <tr><td colspan="6"><div class="empty"><div class="empty-sub">Indlæser...</div></div></td></tr>
+                <tr><td colspan="6"><div class="empty"><div class="empty-sub">Loading...</div></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -682,16 +682,16 @@ canvas { width: 100% !important; }
 <!-- MODAL: Reset password -->
 <div class="modal-overlay" id="modalPassword">
   <div class="modal">
-    <div class="modal-title">Nulstil password</div>
-    <div class="modal-sub" id="modalPasswordSub">Sæt nyt password for brugeren</div>
+    <div class="modal-title">Reset password</div>
+    <div class="modal-sub" id="modalPasswordSub">Set a new password for the user</div>
     <div class="modal-error" id="modalPasswordError"></div>
     <div class="form-group">
-      <label class="form-label">Nyt password</label>
-      <input class="form-input" id="newPassword" type="text" placeholder="Minimum 6 tegn" autocomplete="off" />
+      <label class="form-label">New password</label>
+      <input class="form-input" id="newPassword" type="text" placeholder="Minimum 6 characters" autocomplete="off" />
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="cancelPasswordBtn">Annuller</button>
-      <button class="btn btn-primary" id="confirmPasswordBtn">Gem password</button>
+      <button class="btn btn-ghost" id="cancelPasswordBtn">Cancel</button>
+      <button class="btn btn-primary" id="confirmPasswordBtn">Save password</button>
     </div>
   </div>
 </div>
@@ -699,12 +699,12 @@ canvas { width: 100% !important; }
 <!-- MODAL: Delete user -->
 <div class="modal-overlay" id="modalDelete">
   <div class="modal">
-    <div class="modal-title">Slet bruger</div>
-    <div class="modal-sub" id="modalDeleteSub">Dette kan ikke fortrydes.</div>
+    <div class="modal-title">Delete user</div>
+    <div class="modal-sub" id="modalDeleteSub">This cannot be undone.</div>
     <div class="modal-error" id="modalDeleteError"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="cancelDeleteBtn">Annuller</button>
-      <button class="btn btn-danger" id="confirmDeleteBtn">Ja, slet bruger</button>
+      <button class="btn btn-ghost" id="cancelDeleteBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Yes, delete user</button>
     </div>
   </div>
 </div>
@@ -728,33 +728,33 @@ let _pendingUserId = null;
 
 // ── UTILITIES ──
 function fmtSeconds(s) {
-  if (!s) return '0t';
+  if (!s) return '0h';
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}t`;
-  return `${h}t ${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 function fmtDate(d) {
   if (!d) return '—';
   const date = new Date(d.replace(' ','T') + 'Z');
-  return date.toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function fmtDateShort(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' });
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 function daysAgo(dateStr) {
   if (!dateStr) return null;
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
-  if (diff === 0) return 'I dag';
-  if (diff === 1) return 'I går';
-  if (diff < 7)  return `${diff} dage siden`;
-  if (diff < 30) return `${Math.floor(diff/7)} uge${Math.floor(diff/7) > 1 ? 'r' : ''} siden`;
-  return `${Math.floor(diff/30)} mdr. siden`;
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7)  return `${diff} days ago`;
+  if (diff < 30) return `${Math.floor(diff/7)} week${Math.floor(diff/7) > 1 ? 's' : ''} ago`;
+  return `${Math.floor(diff/30)} months ago`;
 }
 
 function avatarColor(name) {
@@ -812,16 +812,16 @@ async function doLogin() {
   errEl.classList.remove('show');
 
   if (!email || !password) {
-    errEl.textContent = 'Udfyld email og password';
+    errEl.textContent = 'Enter email and password';
     errEl.classList.add('show'); return;
   }
 
   const btn = document.getElementById('loginBtn');
-  btn.classList.add('loading'); btn.textContent = 'Logger ind...';
+  btn.classList.add('loading'); btn.textContent = 'Signing in...';
 
   try {
     const res = await apiFetch('/auth/login', { method: 'POST', body: { email, password } });
-    if (res.user.role !== 'admin') throw new Error('Kun administratorer har adgang');
+    if (res.user.role !== 'admin') throw new Error('Admins only');
     token = res.token;
     localStorage.setItem('tt_admin_token', token);
     me = res.user;
@@ -831,7 +831,7 @@ async function doLogin() {
     errEl.classList.add('show');
   } finally {
     btn.classList.remove('loading');
-    btn.textContent = 'Log ind som admin';
+    btn.textContent = 'Sign in as admin';
   }
 }
 
@@ -859,7 +859,7 @@ async function loadAll() {
     await loadActivityChart();
     const now = new Date();
     document.getElementById('dashboardSub').textContent =
-      `Opdateret ${now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}`;
+      `Updated ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
   } catch (err) {
     if (err.status === 401) {
       token = null; localStorage.removeItem('tt_admin_token');
@@ -872,7 +872,7 @@ async function loadAll() {
 // ── STATS ──
 function renderStats() {
   document.getElementById('statUsers').textContent       = stats.users || 0;
-  document.getElementById('statHours').textContent       = (stats.total_hours || 0) + 't';
+  document.getElementById('statHours').textContent       = (stats.total_hours || 0) + 'h';
   document.getElementById('statEntries').textContent     = stats.entries || 0;
   document.getElementById('statActiveToday').textContent = stats.active_today || 0;
   document.getElementById('statDbSize').textContent      = (stats.db_size_kb || 0) + ' KB';
@@ -885,7 +885,7 @@ function renderDashUserTable() {
 
   if (!users.length) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty">
-      <div class="empty-title">Ingen brugere</div></div></td></tr>`;
+      <div class="empty-title">No users</div></div></td></tr>`;
     return;
   }
 
@@ -913,7 +913,7 @@ function renderDashUserTable() {
       </td>
       <td class="td-mono">${fmtSeconds(u.total_seconds)}</td>
       <td style="color:var(--text-dim);font-size:12px">${daysAgo(u.last_active) || '—'}</td>
-      <td><span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${isActive ? 'Aktiv i dag' : 'Inaktiv'}</span></td>
+      <td><span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${isActive ? 'Active today' : 'Inactive'}</span></td>
     </tr>`;
   }).join('');
 }
@@ -923,7 +923,7 @@ function renderUsersTable() {
   const tbody = document.getElementById('usersTable');
   if (!users.length) {
     tbody.innerHTML = `<tr><td colspan="6"><div class="empty">
-      <div class="empty-title">Ingen brugere</div></div></td></tr>`;
+      <div class="empty-title">No users</div></div></td></tr>`;
     return;
   }
 
@@ -941,7 +941,7 @@ function renderUsersTable() {
       <td>
         <select class="form-input" style="padding:4px 8px;font-size:12px;width:auto"
           onchange="changeRole(${u.id}, this.value)" ${u.id === me.id ? 'disabled' : ''}>
-          <option value="user"  ${u.role === 'user'  ? 'selected' : ''}>Bruger</option>
+          <option value="user"  ${u.role === 'user'  ? 'selected' : ''}>User</option>
           <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
         </select>
       </td>
@@ -957,7 +957,7 @@ function renderUsersTable() {
           ${u.id !== me.id ? `
           <button class="btn btn-danger btn-sm" onclick="openDeleteUser(${u.id}, '${esc(u.name)}')">
             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-            Slet
+            Delete
           </button>` : ''}
         </div>
       </td>
@@ -990,11 +990,11 @@ function renderEngagement() {
       <div class="eng-stats">
         <div class="eng-stat">
           <div class="eng-stat-val" style="color:var(--orange)">${fmtSeconds(u.week_seconds)}</div>
-          <div class="eng-stat-lbl">Uge</div>
+          <div class="eng-stat-lbl">Week</div>
         </div>
         <div class="eng-stat">
           <div class="eng-stat-val">${fmtSeconds(u.today_seconds)}</div>
-          <div class="eng-stat-lbl">I dag</div>
+          <div class="eng-stat-lbl">Today</div>
         </div>
         <div class="eng-stat">
           <div class="eng-stat-val">${u.task_count || 0}</div>
@@ -1002,13 +1002,13 @@ function renderEngagement() {
         </div>
       </div>
       <div class="eng-bar-row">
-        <div class="eng-bar-label"><span>Uge</span><span>${fmtSeconds(u.week_seconds)}</span></div>
+        <div class="eng-bar-label"><span>Week</span><span>${fmtSeconds(u.week_seconds)}</span></div>
         <div class="bar-wrap"><div class="bar-fill bar-orange" style="width:${weekPct}%"></div></div>
         <div class="eng-bar-label" style="margin-top:4px"><span>Total</span><span>${fmtSeconds(u.total_seconds)}</span></div>
         <div class="bar-wrap"><div class="bar-fill bar-blue" style="width:${totalPct}%"></div></div>
       </div>
       <div style="font-size:11px;color:var(--text-muted)">
-        Sidst aktiv: ${daysAgo(u.last_active) || 'Aldrig'}
+        Last active: ${daysAgo(u.last_active) || 'Never'}
       </div>
     </div>`;
   }
@@ -1016,12 +1016,12 @@ function renderEngagement() {
   const superGrid = document.getElementById('superuserGrid');
   superGrid.innerHTML = superusers.length
     ? superusers.map(engCard).join('')
-    : `<div class="empty"><div class="empty-title">Ingen aktive brugere denne uge</div></div>`;
+    : `<div class="empty"><div class="empty-title">No active users this week</div></div>`;
 
   const inactiveGrid = document.getElementById('inactiveGrid');
   inactiveGrid.innerHTML = inactive.length
     ? inactive.map(engCard).join('')
-    : `<div class="empty"><div class="empty-title">Alle brugere har tracket denne uge 🎉</div></div>`;
+    : `<div class="empty"><div class="empty-title">Everyone has tracked time this week 🎉</div></div>`;
 }
 
 // ── ACTIVITY CHART ──
@@ -1042,7 +1042,7 @@ async function loadActivityChart() {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0,10);
-      labels.push(d.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }));
+      labels.push(d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
       data.push(Math.round((byDate[key] || 0) / 3600 * 10) / 10);
     }
 
@@ -1082,7 +1082,7 @@ function drawBarChart(ctx, canvas, labels, data) {
       ctx.fillStyle = '#5c6470';
       ctx.font = `10px 'IBM Plex Mono', monospace`;
       ctx.textAlign = 'right';
-      ctx.fillText((maxVal * i / gridLines).toFixed(1) + 't', PAD_L - 4, y + 3);
+      ctx.fillText((maxVal * i / gridLines).toFixed(1) + 'h', PAD_L - 4, y + 3);
     }
   }
 
@@ -1118,7 +1118,7 @@ function drawBarChart(ctx, canvas, labels, data) {
 async function changeRole(userId, role) {
   try {
     await apiFetch(`/admin/users/${userId}`, { method: 'PATCH', body: { role } });
-    toast('Rolle opdateret', 'ok');
+    toast('Role updated', 'ok');
     const user = users.find(u => u.id === userId);
     if (user) user.role = role;
   } catch (err) { toast(err.message, 'err'); await loadAll(); }
@@ -1126,7 +1126,7 @@ async function changeRole(userId, role) {
 
 function openResetPassword(userId, name) {
   _pendingUserId = userId;
-  document.getElementById('modalPasswordSub').textContent = `Sæt nyt password for ${name}`;
+  document.getElementById('modalPasswordSub').textContent = `Set a new password for ${name}`;
   document.getElementById('newPassword').value = '';
   document.getElementById('modalPasswordError').classList.remove('show');
   document.getElementById('modalPassword').classList.add('show');
@@ -1138,14 +1138,14 @@ async function doResetPassword() {
   const errEl = document.getElementById('modalPasswordError');
   errEl.classList.remove('show');
   if (pwd.length < 6) {
-    errEl.textContent = 'Minimum 6 tegn'; errEl.classList.add('show'); return;
+    errEl.textContent = 'Minimum 6 characters'; errEl.classList.add('show'); return;
   }
   const btn = document.getElementById('confirmPasswordBtn');
   btn.classList.add('loading');
   try {
     await apiFetch(`/admin/users/${_pendingUserId}/password`, { method: 'PATCH', body: { password: pwd } });
     document.getElementById('modalPassword').classList.remove('show');
-    toast('Password nulstillet', 'ok');
+    toast('Password reset', 'ok');
   } catch (err) { errEl.textContent = err.message; errEl.classList.add('show'); }
   btn.classList.remove('loading');
 }
@@ -1153,7 +1153,7 @@ async function doResetPassword() {
 function openDeleteUser(userId, name) {
   _pendingUserId = userId;
   document.getElementById('modalDeleteSub').textContent =
-    `Er du sikker på at du vil slette "${name}"? Alle tasks, timer og noter slettes permanent.`;
+    `Are you sure you want to delete "${name}"? All tasks, time entries and notes are deleted permanently.`;
   document.getElementById('modalDeleteError').classList.remove('show');
   document.getElementById('modalDelete').classList.add('show');
 }
@@ -1166,7 +1166,7 @@ async function doDeleteUser() {
   try {
     await apiFetch(`/admin/users/${_pendingUserId}`, { method: 'DELETE' });
     document.getElementById('modalDelete').classList.remove('show');
-    toast('Bruger slettet', 'ok');
+    toast('User deleted', 'ok');
     await loadAll();
   } catch (err) { errEl.textContent = err.message; errEl.classList.add('show'); }
   btn.classList.remove('loading');
@@ -1181,14 +1181,14 @@ function fmtBytes(b) {
 function renderBackup(d) {
   document.getElementById('backupKeep').value = d.keep;
   document.getElementById('backupLastRun').textContent = d.lastRun
-    ? new Date(d.lastRun).toLocaleString('da-DK', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : 'Aldrig';
+    ? new Date(d.lastRun).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : 'Never';
   const st = document.getElementById('backupLastStatus');
-  st.textContent  = d.lastStatus === 'ok' ? '✓ Gennemført' : (d.lastStatus || '');
+  st.textContent  = d.lastStatus === 'ok' ? '✓ Completed' : (d.lastStatus || '');
   st.style.color  = d.lastStatus === 'ok' ? 'var(--green)' : 'var(--red)';
   document.getElementById('backupTable').innerHTML = d.backups.length
     ? d.backups.map(b => `<tr><td class="td-mono">${esc(b.file)}</td><td class="td-mono">${fmtBytes(b.bytes)}</td></tr>`).join('')
-    : '<tr><td colspan="2" style="color:var(--text-muted)">Ingen backups endnu</td></tr>';
+    : '<tr><td colspan="2" style="color:var(--text-muted)">No backups yet</td></tr>';
 }
 
 async function loadBackup() {
@@ -1197,22 +1197,22 @@ async function loadBackup() {
 
 async function backupNow() {
   const btn = document.getElementById('backupNowBtn');
-  btn.disabled = true; btn.textContent = 'Kører...';
+  btn.disabled = true; btn.textContent = 'Running...';
   try {
     const r = await apiFetch('/admin/backup', { method: 'POST' });
     renderBackup({ keep: parseInt(document.getElementById('backupKeep').value) || 1,
                    lastRun: r.lastRun, lastStatus: 'ok', backups: r.backups });
-    toast(`Backup gennemført: ${r.file}`, 'ok');
+    toast(`Backup completed: ${r.file}`, 'ok');
   } catch (e) { toast(e.message, 'err'); }
-  btn.disabled = false; btn.textContent = 'Tag backup nu';
+  btn.disabled = false; btn.textContent = 'Back up now';
 }
 
 async function saveBackupKeep() {
   const keep = parseInt(document.getElementById('backupKeep').value);
-  if (!Number.isInteger(keep) || keep < 1 || keep > 60) { toast('Angiv et tal mellem 1 og 60', 'err'); return; }
+  if (!Number.isInteger(keep) || keep < 1 || keep > 60) { toast('Enter a number between 1 and 60', 'err'); return; }
   try {
     await apiFetch('/admin/backup', { method: 'PATCH', body: { keep } });
-    toast(`Gemmer nu de ${keep} nyeste backups`, 'ok');
+    toast(`Now keeping the ${keep} newest backups`, 'ok');
     loadBackup();
   } catch (e) { toast(e.message, 'err'); }
 }

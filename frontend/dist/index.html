@@ -727,7 +727,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
       <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><line x1="6" y1="14" x2="6" y2="14"/><line x1="18" y1="14" x2="18" y2="14"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span> Keyboard shortcuts
     </div>
     <div class="drawer-item" id="exportDrawerBtn">
-      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Export rapport
+      <span class="drawer-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Export report
     </div>
     <div class="drawer-item" data-tab="gradient">
       <span class="drawer-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> Background
@@ -907,7 +907,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-title">Skrifttype</div>
+        <div class="settings-title">Font</div>
         <div class="settings-body">
           <div id="fontPicker" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px"></div>
         </div>
@@ -926,14 +926,14 @@ body.has-bg-image #bgDotOverlay { display: block; }
             </div>
           </div>
           <div class="form-field">
-            <label class="form-label">Auto-stop tid</label>
+            <label class="form-label">Auto-stop time</label>
             <input class="form-input" id="sDayEnd" type="time" min="12:00" max="23:59" step="900" />
-            <span class="form-hint">Aktive timere stoppes automatisk på dette tidspunkt</span>
+            <span class="form-hint">Active timers are stopped automatically at this time</span>
           </div>
           <div class="form-field">
-            <label class="form-label">Fraværs-advarsel (minutter)</label>
+            <label class="form-label">Away warning (minutes)</label>
             <input class="form-input" id="sIdleMin" type="number" min="0" max="240" step="5" />
-            <span class="form-hint">Har du været væk så længe med en kørende timer, spørges om fraværet skal fratrækkes. 0 = slået fra</span>
+            <span class="form-hint">If you've been away this long with a running timer, you'll be asked whether to subtract the absence. 0 = off</span>
           </div>
           <button class="btn btn-primary" id="saveGoalsBtn"><span class="btn-text">Save goals</span></button>
         </div>
@@ -955,23 +955,28 @@ body.has-bg-image #bgDotOverlay { display: block; }
       </div>
 
       <div class="settings-section">
-        <div class="settings-title">Chrome Extension — API-nøgle</div>
+        <div class="settings-title">Chrome Extension — API key</div>
         <div class="settings-body">
-          <div class="form-hint" style="color:var(--text-dim);line-height:1.6">Generer en API-nøgle til Chrome extensionen. Nøglen vises kun én gang — gem den med det samme.</div>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6">Generate an API key for the Chrome extension. The key is only shown once — save it right away.</div>
           <div id="apiKeyDisplay" style="display:none">
-            <div class="form-label" style="margin-bottom:4px">Din API-nøgle</div>
+            <div class="form-label" style="margin-bottom:4px">Your API key</div>
             <div style="display:flex;gap:8px;align-items:center">
               <input class="form-input" id="apiKeyValue" type="text" readonly style="font-family:var(--mono);font-size:11px;letter-spacing:0.04em" />
-              <button class="btn btn-ghost btn-sm" id="copyApiKeyBtn" title="Kopiér">Kopiér</button>
+              <button class="btn btn-ghost btn-sm" id="copyApiKeyBtn" title="Copy">Copy</button>
             </div>
-            <div class="form-hint" style="color:var(--orange);margin-top:4px">⚠ Gem denne nøgle nu — den vises ikke igen.</div>
+            <div class="form-hint" style="color:var(--orange);margin-top:4px">⚠ Save this key now — it will not be shown again.</div>
           </div>
-          <div id="apiKeyStatus" style="font-size:12px;color:var(--text-muted)">Kontrollerer...</div>
+          <div id="apiKeyStatus" style="font-size:12px;color:var(--text-muted)">Checking...</div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" style="flex:1" id="generateApiKeyBtn"><span class="btn-text">Generer nøgle</span></button>
-            <button class="btn btn-danger" id="revokeApiKeyBtn" style="display:none"><span class="btn-text">Slet nøgle</span></button>
+            <button class="btn btn-primary" style="flex:1" id="generateApiKeyBtn"><span class="btn-text">Generate key</span></button>
+            <button class="btn btn-danger" id="revokeApiKeyBtn" style="display:none"><span class="btn-text">Delete key</span></button>
           </div>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title" id="whatsNewTitle">What's new</div>
+        <div class="settings-body" id="changelogBody" style="gap:16px"></div>
       </div>
     </div>
     <footer>© <a href="https://larssohl.dk" target="_blank">larssohl.dk</a> — Built with Claude Sonnet</footer>
@@ -1285,28 +1290,28 @@ body.has-bg-image #bgDotOverlay { display: block; }
 <!-- EXPORT MODAL -->
 <div class="overlay" id="exportModal">
   <div class="modal">
-    <div class="modal-title">Export rapport</div>
-    <div class="modal-subtitle">Vælg periode og evt. kundenummer</div>
+    <div class="modal-title">Export report</div>
+    <div class="modal-subtitle">Choose a period and optionally a customer number</div>
     <div style="display:flex;gap:10px">
       <div class="form-field" style="flex:1">
-        <label class="form-label">Fra</label>
+        <label class="form-label">From</label>
         <input class="form-input" type="date" id="exportFrom" />
       </div>
       <div class="form-field" style="flex:1">
-        <label class="form-label">Til</label>
+        <label class="form-label">To</label>
         <input class="form-input" type="date" id="exportTo" />
       </div>
     </div>
     <div class="form-field" style="position:relative">
-      <label class="form-label">Kundenummer <span style="color:var(--text-muted);font-weight:400">(valgfrit)</span></label>
-      <input class="form-input" type="text" id="exportCustomer" placeholder="f.eks. 129223" maxlength="6" autocomplete="off" inputmode="numeric" />
+      <label class="form-label">Customer number <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+      <input class="form-input" type="text" id="exportCustomer" placeholder="e.g. 129223" maxlength="6" autocomplete="off" inputmode="numeric" />
       <div id="customerDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);z-index:20;max-height:180px;overflow-y:auto;margin-top:2px;box-shadow:0 4px 16px rgba(0,0,0,0.4)"></div>
     </div>
     <div class="form-error" id="exportError"></div>
     <div class="modal-actions">
-      <button class="btn btn-primary btn-full" id="exportGenerateBtn"><span class="btn-text">Generer PDF</span></button>
+      <button class="btn btn-primary btn-full" id="exportGenerateBtn"><span class="btn-text">Generate PDF</span></button>
       <button class="btn btn-ghost btn-full" id="exportCsvBtn"><span class="btn-text">Download CSV</span></button>
-      <button class="btn btn-ghost btn-full" id="exportCancelBtn">Annuller</button>
+      <button class="btn btn-ghost btn-full" id="exportCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
@@ -1375,7 +1380,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="offline-banner" id="offlineBanner">⚡ Offline — timer kører, entries gemmes når forbindelsen er genoprettet</div>
+<div class="offline-banner" id="offlineBanner">⚡ Offline — timers keep running, entries are saved when the connection is restored</div>
 
 <script>
 'use strict';
@@ -1383,6 +1388,31 @@ body.has-bg-image #bgDotOverlay { display: block; }
 const API = window.location.protocol === 'file:'
   ? 'http://localhost:3001/api'
   : '/api';
+
+// ── VERSION & CHANGELOG ──
+// Newest release first. Shown under Settings → What's new.
+const APP_VERSION = '1.1.0';
+const CHANGELOG = [
+  {
+    version: '1.1.0',
+    date: '2026-07-11',
+    items: [
+      'The browser tab title shows the running timer live (time + task name)',
+      'Week view: grouped rows expand so individual entries can be edited or deleted',
+      'Automatic nightly database backup with a new Backup section in the admin dashboard',
+      'Forgotten-timer warning: offers to subtract absence when you return (threshold configurable in Settings)',
+      'CSV export alongside the PDF report, formatted for Danish Excel',
+      'Duplicate task names are blocked with a warning dialog',
+      'Security: password-reset codes are admin-only, and the server warns on a default JWT secret',
+      'The entire interface is now in English',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '2026-06-25',
+    items: ['First version: task timers, Week view, notes (Box), PDF report, backgrounds, Chrome extension and admin dashboard'],
+  },
+];
 
 // ── STATE ──
 let token        = localStorage.getItem('tt_token') || null;
@@ -1473,7 +1503,7 @@ function createTaskOffline(name) {
   pendingTaskAdd({ id: tempId, name, color: task.color, budget_seconds: 0 });
   hideNewTask();
   renderTaskList();
-  toast('Offline — job gemt lokalt, synkes når du er online', 'warn');
+  toast("Offline — task saved locally, will sync when you're online", 'warn');
   startTimer(tempId); // pure-local; pingStart() is audio only, no network
 }
 // Push offline-created tasks to the server, returning a tempId→realId map
@@ -2145,7 +2175,7 @@ async function init() {
     await loadTasks();
     await loadTodayEntries();
     await fetchWeekTotal();
-    restoreTimers(); // ← gendanner aktive timers fra localStorage
+    restoreTimers(); // ← restore running timers from localStorage
     await syncOutbox(); // ← sync any pending offline entries + tasks
 
     showPage('appPage');
@@ -2326,7 +2356,7 @@ async function submitNewTask() {
   // Duplicate names are not allowed — warn and keep the input so it can be edited
   const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase());
   if (dup) {
-    showAlert('Jobbet findes allerede', `Der er allerede et job med navnet "${dup.name}". Brug det eksisterende job, eller vælg et andet navn.`);
+    showAlert('Task already exists', `A task named "${dup.name}" already exists. Use the existing task, or choose another name.`);
     return;
   }
   setBtnLoading('addTaskBtn', true);
@@ -2350,7 +2380,7 @@ async function submitNewTask() {
       createTaskOffline(name);
     } else if (e.status === 409) {
       // Duplicate created from another browser/extension since our list loaded
-      showAlert('Jobbet findes allerede', e.message);
+      showAlert('Task already exists', e.message);
     } else {
       toast(e.message, 'err');
     }
@@ -2401,7 +2431,7 @@ async function startEditTaskName(id) {
       // Renaming to another task's name would create a duplicate — warn and revert
       const dup = tasks.find(t => t.id !== id && t.name.trim().toLowerCase() === v.toLowerCase());
       if (dup) {
-        showAlert('Jobbet findes allerede', `Der er allerede et job med navnet "${dup.name}". Vælg et andet navn.`);
+        showAlert('Task already exists', `A task named "${dup.name}" already exists. Choose another name.`);
         renderTaskList();
         return;
       }
@@ -2414,7 +2444,7 @@ async function startEditTaskName(id) {
       } else {
         try { const u = await apiFetch(`/tasks/${id}`, { method: 'PATCH', body: { name: v } }); task.name = u.name; }
         catch (e) {
-          if (e.status === 409) showAlert('Jobbet findes allerede', e.message);
+          if (e.status === 409) showAlert('Task already exists', e.message);
           else toast('Rename failed: ' + e.message, 'err');
         }
       }
@@ -2485,7 +2515,7 @@ async function stopTimer(taskId, skipPersist = false, endAt = null) {
         });
         cacheSet('tt_today_entries', todayEntries);
       }
-      toast('Offline — registrering gemt lokalt', 'warn');
+      toast('Offline — entry saved locally', 'warn');
     } else {
       toast('Timer error: ' + err.message, 'err');
     }
@@ -2593,10 +2623,10 @@ function maybeOfferIdleSubtract(awayMs) {
   if (liveTimers[runningId].startedAt >= leftAt) return;
   const task  = tasks.find(t => t.id === runningId);
   const hours = Math.floor(awayMs / 3600000), mins = Math.round((awayMs % 3600000) / 60000);
-  const awayTxt = hours > 0 ? `${hours}t ${mins}m` : `${mins} min`;
+  const awayTxt = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
   document.getElementById('idleMsg').textContent =
-    `Du har været væk i ${awayTxt}, mens timeren kørte${task ? ` på "${task.name}"` : ''}. ` +
-    `Skal fraværet fratrækkes, eller vil du beholde tiden?`;
+    `You have been away for ${awayTxt} while the timer was running${task ? ` on "${task.name}"` : ''}. ` +
+    `Subtract the absence, or keep the time?`;
   const keepOld = document.getElementById('idleKeepBtn'), subOld = document.getElementById('idleSubtractBtn');
   const keep = keepOld.cloneNode(true), sub = subOld.cloneNode(true);
   keepOld.replaceWith(keep); subOld.replaceWith(sub);
@@ -2607,7 +2637,7 @@ function maybeOfferIdleSubtract(awayMs) {
     await stopTimer(runningId, false, leftAt); // end the registration when you left
     await startTimer(runningId);               // and continue tracking from now
     renderTaskList();
-    toast(`Fravær på ${awayTxt} fratrukket`, 'ok');
+    toast(`Absence of ${awayTxt} subtracted`, 'ok');
   });
   document.getElementById('idleDialog').classList.add('show');
 }
@@ -2670,7 +2700,7 @@ function renderTaskList() {
           ? `<div class="task-checkbox${!task.pinned && selectedTaskIds.has(task.id) ? ' checked' : ''}${task.pinned ? ' pinned-placeholder' : ''}"></div>`
           : `<div class="drag-handle" title="Drag to sort">⠿</div>`}
         <div class="task-info">
-          <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Oprettet offline — synkes når du er online">offline</span>' : ''}</div>
+          <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Created offline — syncs when online">offline</span>' : ''}</div>
           <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
         </div>
         ${selectionMode
@@ -2836,7 +2866,7 @@ async function bulkDelete() {
       exitSelectionMode();
       persistTimers();
       renderTaskList();
-      toast(`${n} task${n !== 1 ? 's' : ''} slettet`, 'ok');
+      toast(`${n} task${n !== 1 ? 's' : ''} deleted`, 'ok');
     }
   );
 }
@@ -3001,7 +3031,7 @@ async function saveEditTime() {
     }
     cacheSet('tt_today_entries', todayEntries);
     closeModal('editTimeModal'); renderTaskList();
-    toast('Offline — tid gemt lokalt', 'warn');
+    toast('Offline — time saved locally', 'warn');
     setBtnLoading('saveEditTimeBtn', false);
     return;
   }
@@ -3092,10 +3122,10 @@ async function generateExport() {
   const customer = document.getElementById('exportCustomer').value.trim();
   hideError('exportError');
 
-  if (!from || !to)  { showError('exportError', 'Vælg både fra- og til-dato.'); return; }
-  if (from > to)     { showError('exportError', 'Fra-dato skal være før til-dato.'); return; }
+  if (!from || !to)  { showError('exportError', 'Choose both a from and to date.'); return; }
+  if (from > to)     { showError('exportError', 'The from date must be before the to date.'); return; }
   if (customer && !/^\d{1,6}$/.test(customer)) {
-    showError('exportError', 'Kundenummer skal være op til 6 cifre.'); return;
+    showError('exportError', 'Customer number must be up to 6 digits.'); return;
   }
 
   setBtnLoading('exportGenerateBtn', true);
@@ -3117,10 +3147,10 @@ async function generateCsvExport() {
   const customer = document.getElementById('exportCustomer').value.trim();
   hideError('exportError');
 
-  if (!from || !to)  { showError('exportError', 'Vælg både fra- og til-dato.'); return; }
-  if (from > to)     { showError('exportError', 'Fra-dato skal være før til-dato.'); return; }
+  if (!from || !to)  { showError('exportError', 'Choose both a from and to date.'); return; }
+  if (from > to)     { showError('exportError', 'The from date must be before the to date.'); return; }
   if (customer && !/^\d{1,6}$/.test(customer)) {
-    showError('exportError', 'Kundenummer skal være op til 6 cifre.'); return;
+    showError('exportError', 'Customer number must be up to 6 digits.'); return;
   }
 
   setBtnLoading('exportCsvBtn', true);
@@ -3142,7 +3172,7 @@ async function generateCsvExport() {
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
     closeModal('exportModal');
-    toast('CSV downloadet', 'ok');
+    toast('CSV downloaded', 'ok');
   } catch (e) {
     showError('exportError', e.message);
   } finally {
@@ -3518,6 +3548,21 @@ function loadSettingsForm() {
   document.getElementById('sIdleMin').value = idleWarnMin;
   loadApiKeyStatus();
   renderFontPicker();
+  renderChangelog();
+}
+
+function renderChangelog() {
+  document.getElementById('whatsNewTitle').textContent = `What's new — v${APP_VERSION}`;
+  document.getElementById('changelogBody').innerHTML = CHANGELOG.map(rel => `
+    <div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <strong style="font-size:13px">Version ${esc(rel.version)}</strong>
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono)">${esc(rel.date)}</span>
+      </div>
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        ${rel.items.map(i => `<li style="font-size:12px;color:var(--text-dim);line-height:1.5">${esc(i)}</li>`).join('')}
+      </ul>
+    </div>`).join('');
 }
 
 async function saveProfile() {
@@ -3541,9 +3586,9 @@ async function saveGoals() {
   const [dehH, dehM] = dehRaw ? dehRaw.split(':').map(Number) : [17, 0];
   if (!dgRaw  || isNaN(dg)  || dg < 0.5 || dg > 24) { toast('Daily goal must be 0.5–24 hours', 'err'); return; }
   if (!wgRaw  || isNaN(wg)  || wg < 1   || wg > 80)  { toast('Weekly goal must be 1–80 hours', 'err');  return; }
-  if (!dehRaw || isNaN(dehH) || dehH < 0 || dehH > 23) { toast('Ugyldig auto-stop tid', 'err'); return; }
-  if (isNaN(dehM) || dehM < 0 || dehM > 59)            { toast('Ugyldig auto-stop tid', 'err'); return; }
-  if (idleRaw === '' || isNaN(idle) || idle < 0 || idle > 240) { toast('Fraværs-advarsel skal være 0–240 minutter', 'err'); return; }
+  if (!dehRaw || isNaN(dehH) || dehH < 0 || dehH > 23) { toast('Invalid auto-stop time', 'err'); return; }
+  if (isNaN(dehM) || dehM < 0 || dehM > 59)            { toast('Invalid auto-stop time', 'err'); return; }
+  if (idleRaw === '' || isNaN(idle) || idle < 0 || idle > 240) { toast('Away warning must be 0–240 minutes', 'err'); return; }
   setBtnLoading('saveGoalsBtn', true);
   try {
     await apiFetch('/auth/me', { method: 'PATCH', body: { day_end_hour: dehH, day_end_minute: dehM } });
@@ -3576,8 +3621,8 @@ async function loadApiKeyStatus() {
   try {
     const res = await apiFetch('/auth/api-key');
     document.getElementById('apiKeyStatus').textContent = res.hasKey
-      ? '✓ API-nøgle er aktiv'
-      : 'Ingen aktiv API-nøgle';
+      ? '✓ API key is active'
+      : 'No active API key';
     document.getElementById('revokeApiKeyBtn').style.display = res.hasKey ? '' : 'none';
   } catch {}
 }
@@ -3588,23 +3633,23 @@ async function generateApiKey() {
     const res = await apiFetch('/auth/api-key', { method: 'POST' });
     document.getElementById('apiKeyValue').value = res.key;
     document.getElementById('apiKeyDisplay').style.display = '';
-    document.getElementById('apiKeyStatus').textContent = '✓ API-nøgle er aktiv';
+    document.getElementById('apiKeyStatus').textContent = '✓ API key is active';
     document.getElementById('revokeApiKeyBtn').style.display = '';
-    toast('API-nøgle genereret — kopiér den nu!', 'warn');
+    toast('API key generated — copy it now!', 'warn');
   } catch (e) { toast(e.message, 'err'); }
   setBtnLoading('generateApiKeyBtn', false);
 }
 
 async function revokeApiKey() {
-  if (!confirm('Slet API-nøglen? Chrome extensionen vil stoppe med at virke.')) return;
+  if (!confirm('Delete the API key? The Chrome extension will stop working.')) return;
   setBtnLoading('revokeApiKeyBtn', true);
   try {
     await apiFetch('/auth/api-key', { method: 'DELETE' });
     document.getElementById('apiKeyDisplay').style.display = 'none';
     document.getElementById('apiKeyValue').value = '';
-    document.getElementById('apiKeyStatus').textContent = 'Ingen aktiv API-nøgle';
+    document.getElementById('apiKeyStatus').textContent = 'No active API key';
     document.getElementById('revokeApiKeyBtn').style.display = 'none';
-    toast('API-nøgle slettet', 'ok');
+    toast('API key deleted', 'ok');
   } catch (e) { toast(e.message, 'err'); }
   setBtnLoading('revokeApiKeyBtn', false);
 }
@@ -3619,7 +3664,7 @@ async function pollExtensionPending() {
     for (const task of pending) {
       await stopAllTimers();
       startTimer(task.id);
-      toast(`▶ "${task.name}" startet fra extension`, 'ok');
+      toast(`▶ "${task.name}" started from extension`, 'ok');
     }
     renderTaskList();
   } catch { /* silent */ }
@@ -3638,7 +3683,7 @@ function stopExtensionPoll() {
 function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text)
-      .then(() => toast('Kopieret', 'ok'))
+      .then(() => toast('Copied', 'ok'))
       .catch(() => fallbackCopy(text));
   }
   fallbackCopy(text);
@@ -3652,9 +3697,9 @@ function fallbackCopy(text) {
   ta.focus(); ta.select();
   try {
     document.execCommand('copy');
-    toast('Kopieret', 'ok');
+    toast('Copied', 'ok');
   } catch {
-    toast('Kopiering fejlede', 'err');
+    toast('Copy failed', 'err');
   }
   document.body.removeChild(ta);
 }
