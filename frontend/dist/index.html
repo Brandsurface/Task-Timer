@@ -1294,6 +1294,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
     <div class="form-error" id="exportError"></div>
     <div class="modal-actions">
       <button class="btn btn-primary btn-full" id="exportGenerateBtn"><span class="btn-text">Generer PDF</span></button>
+      <button class="btn btn-ghost btn-full" id="exportCsvBtn"><span class="btn-text">Download CSV</span></button>
       <button class="btn btn-ghost btn-full" id="exportCancelBtn">Annuller</button>
     </div>
   </div>
@@ -2985,6 +2986,45 @@ async function generateExport() {
   }
 }
 
+async function generateCsvExport() {
+  const from     = document.getElementById('exportFrom').value;
+  const to       = document.getElementById('exportTo').value;
+  const customer = document.getElementById('exportCustomer').value.trim();
+  hideError('exportError');
+
+  if (!from || !to)  { showError('exportError', 'Vælg både fra- og til-dato.'); return; }
+  if (from > to)     { showError('exportError', 'Fra-dato skal være før til-dato.'); return; }
+  if (customer && !/^\d{1,6}$/.test(customer)) {
+    showError('exportError', 'Kundenummer skal være op til 6 cifre.'); return;
+  }
+
+  setBtnLoading('exportCsvBtn', true);
+  try {
+    // Raw fetch: the response is a file, not JSON, and <a href> can't carry the auth header
+    const res = await fetch(`${API}/export/csv?from=${from}&to=${to}${customer ? '&customer=' + customer : ''}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { msg = (await res.json()).error || msg; } catch {}
+      throw new Error(msg);
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tidsrapport-${from}-${to}${customer ? '-' + customer : ''}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    closeModal('exportModal');
+    toast('CSV downloadet', 'ok');
+  } catch (e) {
+    showError('exportError', e.message);
+  } finally {
+    setBtnLoading('exportCsvBtn', false);
+  }
+}
+
 // Customer autocomplete
 let _customerDebounce = null;
 async function fetchCustomerSuggestions(q) {
@@ -3633,6 +3673,7 @@ function setupEventListeners() {
 
   document.getElementById('exportDrawerBtn').addEventListener('click', openExportModal);
   document.getElementById('exportGenerateBtn').addEventListener('click', generateExport);
+  document.getElementById('exportCsvBtn').addEventListener('click', generateCsvExport);
   document.getElementById('exportCancelBtn').addEventListener('click', () => closeModal('exportModal'));
   document.getElementById('exportModal').addEventListener('click', e => {
     if (e.target.id === 'exportModal') closeModal('exportModal');
