@@ -1,5 +1,8 @@
 # TaskTimer — Installations- og opsætningsvejledning
 
+**Aktuel version: 1.1.0** — se ændringer under [Versionshistorik](#versionshistorik)
+nederst, eller i appen under **Settings → What's new**.
+
 ## Indhold
 ```
 tasktimer/
@@ -94,12 +97,21 @@ Alternativt kan du bruge Synology's Container Manager app:
 
 ## Backup
 
-Databasen er én fil:
+Appen tager automatisk en konsistent backup af databasen hver nat kl. 03 til:
 ```
-tasktimer/data/tasktimer.db
+tasktimer/data/backups/tasktimer-ÅÅÅÅ-MM-DD-TTMM.db
 ```
 
-Kopiér denne fil for at tage backup. Synology Hyper Backup kan inkludere `/volume1/docker/tasktimer/data/` automatisk.
+Som standard gemmes kun den nyeste backup (gårsdagens overskrives). Antallet
+kan ændres i admin-panelet under **Dashboard → Backup**, hvor du også kan se
+hvornår sidste backup kørte og tage en manuel backup med det samme.
+
+Lad Synology Hyper Backup inkludere `/volume1/docker/tasktimer/data/` — så
+kommer både databasen og de natlige backups med.
+
+**Vigtigt:** Kopiér ikke `tasktimer.db` direkte mens serveren kører — databasen
+bruger WAL-mode, så en live-kopi kan mangle de nyeste registreringer. Brug
+filerne i `backups/`-mappen i stedet; de er altid konsistente.
 
 ---
 
@@ -147,14 +159,47 @@ ports:
 ## Funktioner
 
 - **Login / opret konto** — individuelle konti per bruger
-- **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop
-- **Timer** — start/stop per opgave, kun én kører ad gangen
+- **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop.
+  Dubletnavne blokeres med en advarsel
+- **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
+  vises live i browserfanens titel
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
+- **Glemt timer** — har du været væk (fanen skjult, laptop lukket, browser genstartet)
+  med en kørende timer, tilbyder appen at fratrække fraværet. Tærskel indstilles
+  under Settings (standard 30 min, 0 = fra)
 - **End Day** — gem dagens tid permanent med bekræftelse
-- **Ugeoversigt** — naviger uger frem/tilbage, rediger og slet historiske registreringer
+- **Ugeoversigt** — naviger uger frem/tilbage; samme job vises som én samlet række
+  pr. dag, som kan foldes ud så de enkelte registreringer kan redigeres/slettes
+- **Eksport** — PDF-rapport og CSV (semikolon + dansk decimal-komma, klar til Excel),
+  begge med valgfrit kundenummer-filter
+- **Backup** — automatisk konsistent databasebackup hver nat kl. 03; styres fra
+  admin-panelet (antal der gemmes, manuel backup, status)
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
-- **Indstillinger** — navn, dagsmål, ugemål, auto-stop tidspunkt, skift adgangskode
+- **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
+  adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+- **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
+  da de er dokumenter til kunder/bogholderi)
+
+---
+
+## Versionshistorik
+
+### 1.1.0 — 11. juli 2026
+- Kørende timer vises live i browserfanens titel (tid + jobnavn)
+- Week: grupperede rækker kan foldes ud, og enkelte registreringer redigeres/slettes
+- Automatisk natlig databasebackup (`VACUUM INTO`) + Backup-sektion i admin-panelet
+- Glemt timer-advarsel: tilbyder at fratrække fravær når man vender tilbage
+- CSV-eksport ved siden af PDF-rapporten
+- Dublet-jobnavne blokeres med advarsels-popup (også fra Chrome-extensionen,
+  som i stedet genbruger det eksisterende job)
+- Sikkerhed: password-reset-koder udleveres kun til admin; serveren advarer ved
+  standard `JWT_SECRET`; email-enumeration lukket
+- Hele brugerfladen oversat til engelsk; versionsnummer og "What's new" i Settings
+
+### 1.0.0 — 25. juni 2026
+- Første version: opgave-timere, ugeoversigt, noter (Box), PDF-rapport,
+  baggrunde, Chrome-extension og admin-panel
 
 ---
 

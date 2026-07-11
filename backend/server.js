@@ -36,7 +36,8 @@ const upload = multer({
 
 // ── SMTP / EMAIL CONFIG ──
 // Set these environment variables to enable email delivery.
-// Without them, the reset code is returned in the API response (admin flow).
+// Without them, the reset code goes to the server log, and only an
+// authenticated admin can retrieve it via the API.
 const SMTP_CONFIG = {
   host:    process.env.SMTP_HOST || null,
   port:    parseInt(process.env.SMTP_PORT || '587'),
@@ -227,14 +228,26 @@ app.post('/api/auth/login', (req, res) => {
 // ── PASSWORD RESET (self-hosted: admin generates token, shares it out-of-band) ──
 
 // Step 1 — request reset token (any user can request for their own email)
-// Admin can call this for any email to get the token back
+// Only an authenticated admin gets the code back in the response; everyone
+// else gets a generic message. Without this check, anyone on the network
+// could take over any account by requesting a code for its email.
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
+  let isAdmin = false;
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    try { isAdmin = jwt.verify(header.slice(7), JWT_SECRET).role === 'admin'; } catch {}
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
-  // Always respond success to prevent email enumeration — but only do work if user exists
-  if (!user) return res.json({ message: 'If that address is registered, a reset code has been sent.' });
+  // Always respond success to prevent email enumeration — but only do work if
+  // user exists. The message must match the known-email response word for word,
+  // otherwise the difference reveals which emails are registered.
+  if (!user) return res.json({ message: SMTP_ENABLED
+    ? 'If that address is registered, a reset code has been sent.'
+    : 'If that address is registered, a reset code has been generated. Ask your administrator for it.' });
 
   // Generate an 8-char uppercase hex token
   const token   = crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -271,13 +284,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
     return res.json({ message: `Reset code sent to ${user.email}. Check your inbox.` });
   } else {
-    // ── ADMIN MODE: no SMTP configured — return code directly ──
+    // ── NO SMTP: the code goes to the server log, and only an authenticated
+    // admin gets it in the response (to share with the user out-of-band) ──
     console.log(`[TaskTimer] Password reset code for ${user.email}: ${token} (expires ${expires})`);
-    return res.json({
-      message:   'No email server configured. Share this code with the user.',
-      resetCode: token,
-      expiresAt: expires,
-    });
+    if (isAdmin) {
+      return res.json({
+        message:   'No email server configured. Share this code with the user.',
+        resetCode: token,
+        expiresAt: expires,
+      });
+    }
+    return res.json({ message: 'If that address is registered, a reset code has been generated. Ask your administrator for it.' });
   }
 });
 
@@ -372,9 +389,23 @@ app.get('/api/tasks', auth, (req, res) => {
   res.json(tasks);
 });
 
+// Case-insensitive duplicate check among the user's active (non-archived)
+// tasks. Archived tasks don't count — deleting a task archives it, and the
+// name must be reusable afterwards.
+function findDuplicateTask(userId, name, excludeId = null) {
+  return db.prepare(`
+    SELECT id, name FROM tasks
+    WHERE user_id = ? AND archived = 0 AND LOWER(name) = LOWER(?)
+    ${excludeId ? 'AND id != ?' : ''}
+  `).get(...[userId, name.trim(), ...(excludeId ? [excludeId] : [])]);
+}
+
 app.post('/api/tasks', auth, (req, res) => {
   const { name, color, budget_seconds } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
+
+  const dup = findDuplicateTask(req.user.id, name);
+  if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
 
   // New tasks go to the top: take the lowest sort_order and subtract 1.
   // O(1) — preserves every existing task's order without mass updates.
@@ -395,6 +426,8 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   if (name !== undefined) {
     const trimmed = name.trim();
     if (!trimmed) return res.status(400).json({ error: 'Task name cannot be empty' });
+    const dup = findDuplicateTask(req.user.id, trimmed, task.id);
+    if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
     updates.name = trimmed;
   }
   if (color          !== undefined) updates.color          = color;
@@ -483,7 +516,7 @@ app.get('/api/export', auth, (req, res) => {
   // Optional 6-digit customer number filter
   const customerFilter = customer ? customer.trim() : null;
   if (customerFilter && !/^\d{1,6}$/.test(customerFilter))
-    return res.status(400).json({ error: 'Kundenummer skal være op til 6 cifre' });
+    return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
 
   const rows = db.prepare(`
     SELECT e.date, t.name as task_name,
@@ -546,6 +579,65 @@ app.get('/api/export/customers', auth, (req, res) => {
     if (!seen[r.customer]) seen[r.customer] = r.name;
   }
   res.json(Object.entries(seen).map(([num, name]) => ({ num, name })));
+});
+
+// CSV export — one row per task per day, semicolon-separated with BOM and
+// decimal comma so Danish Excel opens it correctly
+app.get('/api/export/csv', auth, (req, res) => {
+  const { from, to, customer } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to required' });
+
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRe.test(from) || !dateRe.test(to))
+    return res.status(400).json({ error: 'Invalid date format' });
+  if (from > to)
+    return res.status(400).json({ error: 'from must be before to' });
+
+  const customerFilter = customer ? customer.trim() : null;
+  if (customerFilter && !/^\d{1,6}$/.test(customerFilter))
+    return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
+
+  const rows = db.prepare(`
+    SELECT e.date, t.name AS task_name,
+           SUM(e.seconds) AS total_seconds,
+           GROUP_CONCAT(NULLIF(e.note, ''), ' / ') AS notes
+    FROM time_entries e
+    JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ?
+      AND e.date >= ? AND e.date <= ?
+      ${customerFilter ? "AND t.name LIKE ?" : ''}
+    GROUP BY e.date, e.task_id
+    ORDER BY e.date ASC, t.name ASC
+  `).all(...[req.user.id, from, to, ...(customerFilter ? [`${customerFilter}%`] : [])]);
+
+  const csvField = v => {
+    const s = String(v ?? '');
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
+  const decimalHours = sec => (sec / 3600).toFixed(2).replace('.', ',');
+
+  let total = 0;
+  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm)', 'Timer (decimal)'].join(';')];
+  for (const r of rows) {
+    total += r.total_seconds;
+    const jobMatch = r.task_name.match(/^(\d{6})/);
+    lines.push([
+      r.date,
+      jobMatch ? jobMatch[1] : '',
+      csvField(r.task_name),
+      csvField(r.notes || ''),
+      hhmm(r.total_seconds),
+      decimalHours(r.total_seconds),
+    ].join(';'));
+  }
+  lines.push('');
+  lines.push(['Total', '', '', '', hhmm(total), decimalHours(total)].join(';'));
+
+  const filename = `tidsrapport-${from}-${to}${customerFilter ? '-' + customerFilter : ''}.csv`;
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send('\ufeff' + lines.join('\r\n')); // BOM so Excel detects UTF-8 (æøå)
 });
 
 app.get('/api/entries', auth, (req, res) => {
@@ -799,6 +891,106 @@ app.get('/api/admin/stats', auth, adminOnly, (req, res) => {
 });
 
 // ─────────────────────────────────────────
+//  BACKUP
+// ─────────────────────────────────────────
+// Consistent SQLite backups via VACUUM INTO — safe while the server runs,
+// unlike copying the .db file directly (recent data would be missing from
+// the copy because of WAL mode).
+
+const DB_FILE     = process.env.DB_PATH || path.join(__dirname, '../data/tasktimer.db');
+const BACKUPS_DIR = path.join(path.dirname(DB_FILE), 'backups');
+fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+
+const getSetting = (key, fallback = null) => {
+  const row = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key);
+  return row ? row.value : fallback;
+};
+const setSetting = (key, value) => db.prepare(`
+  INSERT INTO app_settings (key, value) VALUES (?, ?)
+  ON CONFLICT(key) DO UPDATE SET value = excluded.value
+`).run(key, String(value));
+
+// How many backups to keep (admin-configurable, default 1 = always just the newest)
+function backupKeepCount() {
+  const n = parseInt(getSetting('backup_keep', '1'));
+  return Number.isInteger(n) && n >= 1 && n <= 60 ? n : 1;
+}
+
+function listBackups() {
+  // Filename embeds the timestamp, so sorting by name = newest first
+  return fs.readdirSync(BACKUPS_DIR)
+    .filter(f => /^tasktimer-\d{4}-\d{2}-\d{2}-\d{4}\.db$/.test(f))
+    .map(f => ({ file: f, bytes: fs.statSync(path.join(BACKUPS_DIR, f)).size }))
+    .sort((a, b) => b.file.localeCompare(a.file));
+}
+
+function pruneBackups(keep) {
+  listBackups().slice(keep).forEach(b => {
+    try { fs.unlinkSync(path.join(BACKUPS_DIR, b.file)); } catch {}
+  });
+}
+
+function runBackup(trigger) {
+  const now   = new Date();
+  // 2026-07-11-0300 (Copenhagen time)
+  const stamp = now.toLocaleString('sv-SE', { timeZone: 'Europe/Copenhagen', hour12: false })
+                   .replace(' ', '-').replace(/:/g, '').slice(0, 15);
+  const file  = `tasktimer-${stamp}.db`;
+  // VACUUM INTO refuses to overwrite — write to a temp name, then rename
+  const tmp   = path.join(BACKUPS_DIR, `.writing-${Date.now()}.db`);
+  try {
+    db.prepare('VACUUM INTO ?').run(tmp);
+    fs.renameSync(tmp, path.join(BACKUPS_DIR, file));
+    pruneBackups(backupKeepCount());
+    setSetting('backup_last_run', now.toISOString());
+    setSetting('backup_last_status', 'ok');
+    console.log(`[TaskTimer] Backup OK → ${file} (${trigger})`);
+    return { ok: true, file };
+  } catch (e) {
+    try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch {}
+    setSetting('backup_last_run', now.toISOString());
+    setSetting('backup_last_status', `error: ${e.message}`);
+    console.error(`[TaskTimer] Backup failed (${trigger}):`, e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// Nightly backup — first tick after 03:00 Copenhagen time, once per day.
+// backup_last_auto_date persists across restarts so a redeploy doesn't re-run it.
+setInterval(() => {
+  const today = todayDK();
+  const hour  = parseInt(new Date().toLocaleTimeString('sv-SE', { timeZone: 'Europe/Copenhagen', hour: '2-digit', hour12: false }));
+  if (hour >= 3 && getSetting('backup_last_auto_date') !== today) {
+    setSetting('backup_last_auto_date', today);
+    runBackup('auto');
+  }
+}, 5 * 60 * 1000);
+
+app.get('/api/admin/backup', auth, adminOnly, (req, res) => {
+  res.json({
+    keep:       backupKeepCount(),
+    lastRun:    getSetting('backup_last_run'),
+    lastStatus: getSetting('backup_last_status'),
+    backups:    listBackups(),
+  });
+});
+
+app.post('/api/admin/backup', auth, adminOnly, (req, res) => {
+  const r = runBackup('manual');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  res.json({ file: r.file, lastRun: getSetting('backup_last_run'), backups: listBackups() });
+});
+
+app.patch('/api/admin/backup', auth, adminOnly, (req, res) => {
+  const keep = parseInt(req.body.keep);
+  if (!Number.isInteger(keep) || keep < 1 || keep > 60)
+    return res.status(400).json({ error: 'Backup count must be between 1 and 60' });
+  setSetting('backup_keep', keep);
+  pruneBackups(keep);
+  res.json({ keep, backups: listBackups() });
+});
+
+// ─────────────────────────────────────────
 //  NOTES (BOX)
 // ─────────────────────────────────────────
 
@@ -875,7 +1067,7 @@ app.post('/api/auth/api-key', auth, (req, res) => {
   const hashed = crypto.createHash('sha256').update(raw).digest('hex');
   db.prepare('UPDATE users SET api_key = ? WHERE id = ?').run(hashed, req.user.id);
   // Return the raw key — only time it's ever visible
-  res.json({ key: raw, message: 'Gem denne nøgle — den vises kun én gang.' });
+  res.json({ key: raw, message: 'Save this key — it is only shown once.' });
 });
 
 // Revoke API key
@@ -899,6 +1091,15 @@ app.get('/api/auth/api-key', auth, (req, res) => {
 app.post('/api/extension/task', authOrApiKey, (req, res) => {
   const { name, start_timer = false } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
+
+  // Same name already exists: reuse that task instead of creating a duplicate
+  // (and honour start_timer by flagging it for auto-start)
+  const dup = findDuplicateTask(req.user.id, name);
+  if (dup) {
+    if (start_timer) db.prepare('UPDATE tasks SET pending_start = 1 WHERE id = ?').run(dup.id);
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(dup.id);
+    return res.json({ task, start_timer, existing: true });
+  }
 
   // New tasks go to the top — see /api/tasks rationale.
   const minOrder = db.prepare('SELECT MIN(sort_order) as m FROM tasks WHERE user_id = ?').get(req.user.id);
@@ -1015,6 +1216,27 @@ app.use((err, req, res, next) => {
   const status = err.code === 'LIMIT_FILE_SIZE' ? 400 : 500;
   res.status(status).json({ error: err.message || 'Server error' });
 });
+
+// Known non-secrets: the code default and the docker-compose.yml placeholder.
+// Both are public in the repo, so tokens signed with them can be forged.
+const DEFAULT_JWT_SECRETS = [
+  'tasktimer-change-in-production-please',
+  'CHANGE_THIS_TO_A_LONG_RANDOM_STRING_MINIMUM_32_CHARS',
+];
+if (DEFAULT_JWT_SECRETS.includes(JWT_SECRET)) {
+  console.warn(
+    '\n' +
+    '╔════════════════════════════════════════════════════════════════════╗\n' +
+    '║  WARNING: JWT_SECRET is not set!                                     ║\n' +
+    '║                                                                      ║\n' +
+    '║  The server is running with a publicly known default value, so      ║\n' +
+    '║  login tokens can be forged by anyone on the network.               ║\n' +
+    '║                                                                      ║\n' +
+    '║  Set JWT_SECRET in docker-compose.yml to a long random string,      ║\n' +
+    '║  e.g. the output of:  openssl rand -hex 32                          ║\n' +
+    '╚════════════════════════════════════════════════════════════════════╝\n'
+  );
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`TaskTimer API running on port ${PORT}`);
