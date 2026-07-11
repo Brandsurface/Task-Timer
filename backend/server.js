@@ -548,6 +548,65 @@ app.get('/api/export/customers', auth, (req, res) => {
   res.json(Object.entries(seen).map(([num, name]) => ({ num, name })));
 });
 
+// CSV export — one row per task per day, semicolon-separated with BOM and
+// decimal comma so Danish Excel opens it correctly
+app.get('/api/export/csv', auth, (req, res) => {
+  const { from, to, customer } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to required' });
+
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRe.test(from) || !dateRe.test(to))
+    return res.status(400).json({ error: 'Invalid date format' });
+  if (from > to)
+    return res.status(400).json({ error: 'from must be before to' });
+
+  const customerFilter = customer ? customer.trim() : null;
+  if (customerFilter && !/^\d{1,6}$/.test(customerFilter))
+    return res.status(400).json({ error: 'Kundenummer skal være op til 6 cifre' });
+
+  const rows = db.prepare(`
+    SELECT e.date, t.name AS task_name,
+           SUM(e.seconds) AS total_seconds,
+           GROUP_CONCAT(NULLIF(e.note, ''), ' / ') AS notes
+    FROM time_entries e
+    JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ?
+      AND e.date >= ? AND e.date <= ?
+      ${customerFilter ? "AND t.name LIKE ?" : ''}
+    GROUP BY e.date, e.task_id
+    ORDER BY e.date ASC, t.name ASC
+  `).all(...[req.user.id, from, to, ...(customerFilter ? [`${customerFilter}%`] : [])]);
+
+  const csvField = v => {
+    const s = String(v ?? '');
+    return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
+  const decimalHours = sec => (sec / 3600).toFixed(2).replace('.', ',');
+
+  let total = 0;
+  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm)', 'Timer (decimal)'].join(';')];
+  for (const r of rows) {
+    total += r.total_seconds;
+    const jobMatch = r.task_name.match(/^(\d{6})/);
+    lines.push([
+      r.date,
+      jobMatch ? jobMatch[1] : '',
+      csvField(r.task_name),
+      csvField(r.notes || ''),
+      hhmm(r.total_seconds),
+      decimalHours(r.total_seconds),
+    ].join(';'));
+  }
+  lines.push('');
+  lines.push(['Total', '', '', '', hhmm(total), decimalHours(total)].join(';'));
+
+  const filename = `tidsrapport-${from}-${to}${customerFilter ? '-' + customerFilter : ''}.csv`;
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send('\ufeff' + lines.join('\r\n')); // BOM so Excel detects UTF-8 (æøå)
+});
+
 app.get('/api/entries', auth, (req, res) => {
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).json({ error: 'from and to dates required' });
