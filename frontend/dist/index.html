@@ -402,6 +402,11 @@ body::after {
 .we-dur { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--orange); flex-shrink: 0; }
 .we-del { opacity: 0; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: color 0.12s, opacity 0.15s; flex-shrink: 0; padding: 3px 5px; border-radius: 4px; }
 .we-del:hover { color: var(--red); background: rgba(224,85,85,0.1); }
+.we-chev { color: var(--text-muted); font-size: 10px; flex-shrink: 0; padding: 2px; transition: transform 0.15s; }
+.we-group.open .we-chev { transform: rotate(90deg); }
+.we-sub { display: none; margin-left: 13px; border-left: 1px solid var(--border); padding-left: 6px; }
+.we-sub.open { display: block; }
+.we-child .we-meta { margin-top: 0; }
 .week-empty { font-size: 11px; color: var(--text-muted); padding: 10px 8px; font-style: italic; }
 .week-summary-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
 .ws-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
@@ -1356,6 +1361,7 @@ let tasks        = [];
 let liveTimers   = {};
 let todayEntries = [];
 let weekOffset   = 0;
+let openWeekGroups = new Set(); // expanded grouped rows in Week view, keyed "date:task_id"
 let tickerRef        = null;
 let autoStopRef      = null;
 let extensionPollRef = null; // polls for extension-triggered task starts
@@ -3183,12 +3189,13 @@ async function renderWeek() {
     const dayE = entries.filter(e => e.date === dk);
     // Group entries by task_id so duplicate tasks show as one accumulated row
     const dayGrouped = Object.values(dayE.reduce((acc, e) => {
-      if (!acc[e.task_id]) acc[e.task_id] = { ...e, seconds: 0, count: 0 };
+      if (!acc[e.task_id]) acc[e.task_id] = { ...e, seconds: 0, count: 0, entries: [] };
       const g = acc[e.task_id];
       if (e.start_time < g.start_time) g.start_time = e.start_time;
       if (e.end_time   > g.end_time)   g.end_time   = e.end_time;
       g.seconds += e.seconds;
       g.count++;
+      g.entries.push(e);
       return acc;
     }, {}));
     // Today: committed entries + live timers; other days: committed entries only
@@ -3201,20 +3208,34 @@ async function renderWeek() {
     block.className = 'day-block';
 
     const _copySvg = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>`;
-    const entryRow = g => g.count > 1
-      ? `<div class="week-entry">
+    const entryRow = g => {
+      if (g.count > 1) {
+        // Grouped row: click to expand into the individual entries, each editable/deletable
+        const gkey = `${g.date}:${g.task_id}`;
+        const open = openWeekGroups.has(gkey);
+        const subRows = g.entries.map(e =>
+          `<div class="week-entry we-child" data-eid="${e.id}">
+             <div class="we-body"><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
+             <div class="we-dur">${hm(e.seconds)}</div>
+             <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
+           </div>`).join('');
+        return `<div class="week-entry we-group${open ? ' open' : ''}" data-gkey="${gkey}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}</div></div>
+           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time} · ×${g.count}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
            <div class="we-dur">${hm(g.seconds)}</div>
-         </div>`
-      : `<div class="week-entry" data-eid="${g.id}">
+           <div class="we-chev">▸</div>
+         </div>
+         <div class="we-sub${open ? ' open' : ''}" data-gsub="${gkey}">${subRows}</div>`;
+      }
+      return `<div class="week-entry" data-eid="${g.id}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
            <div class="we-dur">${hm(g.seconds)}</div>
            <div class="we-del" data-did="${g.id}" title="Delete">✕</div>
          </div>`;
+    };
 
     // Build entries HTML for today: committed rows + live timer rows
     let entriesHtml;
@@ -3243,6 +3264,16 @@ async function renderWeek() {
       <div class="day-entries">${entriesHtml}</div>`;
     block.querySelectorAll('.week-entry[data-eid]').forEach(row => {
       row.addEventListener('click', e => { if (e.target.closest('.we-del') || e.target.closest('.we-copy')) return; editEntry(parseInt(row.dataset.eid)); });
+    });
+    block.querySelectorAll('.we-group[data-gkey]').forEach(row => {
+      row.addEventListener('click', e => {
+        if (e.target.closest('.we-copy')) return;
+        const key = row.dataset.gkey;
+        const isOpen = row.classList.toggle('open');
+        const sub = block.querySelector(`.we-sub[data-gsub="${key}"]`);
+        if (sub) sub.classList.toggle('open', isOpen);
+        if (isOpen) openWeekGroups.add(key); else openWeekGroups.delete(key);
+      });
     });
     block.querySelectorAll('.we-del[data-did]').forEach(btn => {
       btn.addEventListener('click', e => { e.stopPropagation(); deleteWeekEntry(parseInt(btn.dataset.did)); });
