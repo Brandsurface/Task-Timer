@@ -449,6 +449,7 @@ body::after {
 .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
 .confirm-overlay.show { display: flex; }
 .confirm-box { background: var(--surface); border: 1px solid rgba(224,85,85,0.3); border-radius: 14px; padding: 22px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 14px; animation: modalIn 0.17s ease both, deletePulse 1.4s ease-in-out infinite; }
+.confirm-box.neutral { border-color: var(--border2); animation: modalIn 0.17s ease both; }
 .confirm-title { font-size: 15px; font-weight: 700; }
 .confirm-msg { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
 .confirm-actions { display: flex; gap: 8px; }
@@ -1335,6 +1336,17 @@ body.has-bg-image #bgDotOverlay { display: block; }
     <div class="confirm-actions">
       <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
       <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT DIALOG — neutral warning with a single OK button -->
+<div class="confirm-overlay" id="alertDialog">
+  <div class="confirm-box neutral">
+    <div class="confirm-title" id="alertTitle"></div>
+    <div class="confirm-msg" id="alertMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-primary" id="alertOkBtn" style="flex:1">OK</button>
     </div>
   </div>
 </div>
@@ -2284,6 +2296,12 @@ function hideNewTask() {
 async function submitNewTask() {
   const name = document.getElementById('newTaskInput').value.trim();
   if (!name) return;
+  // Duplicate names are not allowed — warn and keep the input so it can be edited
+  const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase());
+  if (dup) {
+    showAlert('Jobbet findes allerede', `Der er allerede et job med navnet "${dup.name}". Brug det eksisterende job, eller vælg et andet navn.`);
+    return;
+  }
   setBtnLoading('addTaskBtn', true);
   // Offline: create locally and queue for sync
   if (!navigator.onLine) {
@@ -2303,6 +2321,9 @@ async function submitNewTask() {
     // Network dropped mid-request — fall back to offline creation instead of losing it
     if (e.status === 0 || !navigator.onLine) {
       createTaskOffline(name);
+    } else if (e.status === 409) {
+      // Duplicate created from another browser/extension since our list loaded
+      showAlert('Jobbet findes allerede', e.message);
     } else {
       toast(e.message, 'err');
     }
@@ -2350,6 +2371,13 @@ async function startEditTaskName(id) {
     if (done) return; done = true;
     const v = inp.value.trim();
     if (v && v !== task.name) {
+      // Renaming to another task's name would create a duplicate — warn and revert
+      const dup = tasks.find(t => t.id !== id && t.name.trim().toLowerCase() === v.toLowerCase());
+      if (dup) {
+        showAlert('Jobbet findes allerede', `Der er allerede et job med navnet "${dup.name}". Vælg et andet navn.`);
+        renderTaskList();
+        return;
+      }
       if (isTempId(id)) {
         // Local-only task: rename in memory and in pending storage
         task.name = v;
@@ -2358,7 +2386,10 @@ async function startEditTaskName(id) {
         if (pt) { pt.name = v; localStorage.setItem('tt_pending_tasks', JSON.stringify(list)); }
       } else {
         try { const u = await apiFetch(`/tasks/${id}`, { method: 'PATCH', body: { name: v } }); task.name = u.name; }
-        catch (e) { toast('Rename failed: ' + e.message, 'err'); }
+        catch (e) {
+          if (e.status === 409) showAlert('Jobbet findes allerede', e.message);
+          else toast('Rename failed: ' + e.message, 'err');
+        }
       }
     }
     renderTaskList();
@@ -3463,6 +3494,17 @@ function fallbackCopy(text) {
     toast('Kopiering fejlede', 'err');
   }
   document.body.removeChild(ta);
+}
+
+function showAlert(title, msg) {
+  document.getElementById('alertTitle').textContent = title;
+  document.getElementById('alertMsg').textContent   = msg;
+  const okOld = document.getElementById('alertOkBtn');
+  const ok = okOld.cloneNode(true);
+  okOld.replaceWith(ok);
+  ok.addEventListener('click', () => document.getElementById('alertDialog').classList.remove('show'));
+  document.getElementById('alertDialog').classList.add('show');
+  ok.focus();
 }
 
 function showConfirm(title, msg, onOk) {

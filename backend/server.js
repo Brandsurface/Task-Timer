@@ -372,9 +372,23 @@ app.get('/api/tasks', auth, (req, res) => {
   res.json(tasks);
 });
 
+// Case-insensitive duplicate check among the user's active (non-archived)
+// tasks. Archived tasks don't count — deleting a task archives it, and the
+// name must be reusable afterwards.
+function findDuplicateTask(userId, name, excludeId = null) {
+  return db.prepare(`
+    SELECT id, name FROM tasks
+    WHERE user_id = ? AND archived = 0 AND LOWER(name) = LOWER(?)
+    ${excludeId ? 'AND id != ?' : ''}
+  `).get(...[userId, name.trim(), ...(excludeId ? [excludeId] : [])]);
+}
+
 app.post('/api/tasks', auth, (req, res) => {
   const { name, color, budget_seconds } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
+
+  const dup = findDuplicateTask(req.user.id, name);
+  if (dup) return res.status(409).json({ error: `Der findes allerede et job med navnet "${dup.name}"` });
 
   // New tasks go to the top: take the lowest sort_order and subtract 1.
   // O(1) — preserves every existing task's order without mass updates.
@@ -395,6 +409,8 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   if (name !== undefined) {
     const trimmed = name.trim();
     if (!trimmed) return res.status(400).json({ error: 'Task name cannot be empty' });
+    const dup = findDuplicateTask(req.user.id, trimmed, task.id);
+    if (dup) return res.status(409).json({ error: `Der findes allerede et job med navnet "${dup.name}"` });
     updates.name = trimmed;
   }
   if (color          !== undefined) updates.color          = color;
@@ -899,6 +915,15 @@ app.get('/api/auth/api-key', auth, (req, res) => {
 app.post('/api/extension/task', authOrApiKey, (req, res) => {
   const { name, start_timer = false } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
+
+  // Same name already exists: reuse that task instead of creating a duplicate
+  // (and honour start_timer by flagging it for auto-start)
+  const dup = findDuplicateTask(req.user.id, name);
+  if (dup) {
+    if (start_timer) db.prepare('UPDATE tasks SET pending_start = 1 WHERE id = ?').run(dup.id);
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(dup.id);
+    return res.json({ task, start_timer, existing: true });
+  }
 
   // New tasks go to the top — see /api/tasks rationale.
   const minOrder = db.prepare('SELECT MIN(sort_order) as m FROM tasks WHERE user_id = ?').get(req.user.id);
