@@ -454,6 +454,7 @@ body::after {
 .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
 .confirm-overlay.show { display: flex; }
 .confirm-box { background: var(--surface); border: 1px solid rgba(224,85,85,0.3); border-radius: 14px; padding: 22px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 14px; animation: modalIn 0.17s ease both, deletePulse 1.4s ease-in-out infinite; }
+.confirm-box.neutral { border-color: var(--border2); animation: modalIn 0.17s ease both; }
 .confirm-title { font-size: 15px; font-weight: 700; }
 .confirm-msg { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
 .confirm-actions { display: flex; gap: 8px; }
@@ -929,6 +930,11 @@ body.has-bg-image #bgDotOverlay { display: block; }
             <input class="form-input" id="sDayEnd" type="time" min="12:00" max="23:59" step="900" />
             <span class="form-hint">Aktive timere stoppes automatisk på dette tidspunkt</span>
           </div>
+          <div class="form-field">
+            <label class="form-label">Fraværs-advarsel (minutter)</label>
+            <input class="form-input" id="sIdleMin" type="number" min="0" max="240" step="5" />
+            <span class="form-hint">Har du været væk så længe med en kørende timer, spørges om fraværet skal fratrækkes. 0 = slået fra</span>
+          </div>
           <button class="btn btn-primary" id="saveGoalsBtn"><span class="btn-text">Save goals</span></button>
         </div>
       </div>
@@ -1344,6 +1350,18 @@ body.has-bg-image #bgDotOverlay { display: block; }
   </div>
 </div>
 
+<!-- IDLE / GLEMT TIMER DIALOG -->
+<div class="confirm-overlay" id="idleDialog">
+  <div class="confirm-box neutral">
+    <div class="confirm-title">Har du været væk?</div>
+    <div class="confirm-msg" id="idleMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="idleKeepBtn">Behold tiden</button>
+      <button class="btn btn-primary" id="idleSubtractBtn">Fratræk fraværet</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="offline-banner" id="offlineBanner">⚡ Offline — timer kører, entries gemmes når forbindelsen er genoprettet</div>
 
@@ -1367,6 +1385,7 @@ let autoStopRef      = null;
 let extensionPollRef = null; // polls for extension-triggered task starts
 let dayGoalH     = parseFloat(localStorage.getItem('tt_dayGoal')  || '8');
 let weekGoalH    = parseFloat(localStorage.getItem('tt_weekGoal') || '37');
+let idleWarnMin  = parseInt(localStorage.getItem('tt_idleMin') || '30'); // 0 = disabled
 let weekSecCache = null;
 let currentTheme = localStorage.getItem('tt_theme') || 'dark';
 let selectedTaskId  = null; // keyboard-selected task card
@@ -1539,11 +1558,12 @@ function bootOffline() {
   todayEntries = cacheGet('tt_today_entries') || [];
   const wk = cacheGet('tt_week'); if (wk) weekSecCache = wk;
   restoreTimers();
-  
+
   showPage('appPage');
   renderTaskList();
   scheduleAutoStop();
   startTicker();
+  checkIdleOnLoad();
   // Keep trying to reconnect in the background
   const retry = () => refreshFromServer().then(ok => { if (!ok && !navigator.onLine) setTimeout(retry, 8000); });
   setTimeout(retry, 8000);
@@ -2115,12 +2135,13 @@ async function init() {
     await fetchWeekTotal();
     restoreTimers(); // ← gendanner aktive timers fra localStorage
     await syncOutbox(); // ← sync any pending offline entries + tasks
-    
+
     showPage('appPage');
     renderTaskList();
     scheduleAutoStop();
     startTicker();
     startExtensionPoll();
+    checkIdleOnLoad();
   } catch (err) {
     // Only log out if the server explicitly rejected the token (401)
     if (err.status === 401) {
@@ -2399,15 +2420,17 @@ async function startTimer(taskId) {
   if (card) { card.classList.add('pop'); setTimeout(() => card.classList.remove('pop'), 300); }
 }
 
-async function stopTimer(taskId, skipPersist = false) {
+async function stopTimer(taskId, skipPersist = false, endAt = null) {
   const lt = liveTimers[taskId]; if (!lt) return;
-  const elapsed = Math.floor((new Date() - lt.startedAt) / 1000);
+  // endAt: optional earlier end time — used by idle detection to cut off absence
+  const end = endAt ? new Date(endAt) : new Date();
+  const elapsed = Math.floor((end - lt.startedAt) / 1000);
   delete liveTimers[taskId];
   if (!skipPersist) persistTimers();
   pingStop();
   updateTabTitle();
   if (elapsed < 10) { renderTaskList(); return; }
-  const s = new Date(lt.startedAt), e = new Date();
+  const s = new Date(lt.startedAt), e = end;
   const dateStr = localDateStr(s);
   const entryBody = {
     task_id: taskId, date: dateStr,
@@ -2502,6 +2525,60 @@ function scheduleAutoStop() {
     toast(`Timers stopped automatically at ${pad(endHour)}:${pad(endMinute)}`, 'ok');
     scheduleAutoStop();
   }, stop - now);
+}
+
+// ── IDLE / GLEMT TIMER ──
+// Detects absence while a timer runs (tab hidden, laptop closed, page reload)
+// and offers to subtract the away-time from the running registration.
+let _hiddenAt = null;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (Object.keys(liveTimers).length > 0) _hiddenAt = Date.now();
+    localStorage.setItem('tt_lastSeen', Date.now());
+  } else {
+    const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
+    _hiddenAt = null;
+    maybeOfferIdleSubtract(away);
+  }
+});
+
+// Heartbeat: lets us measure absence across a killed browser / page reload
+setInterval(() => { if (!document.hidden) localStorage.setItem('tt_lastSeen', Date.now()); }, 15000);
+
+// Reload case — call after restoreTimers(): was the page gone long with a running timer?
+function checkIdleOnLoad() {
+  const lastSeen = parseInt(localStorage.getItem('tt_lastSeen') || '0');
+  if (lastSeen) maybeOfferIdleSubtract(Date.now() - lastSeen);
+  localStorage.setItem('tt_lastSeen', Date.now());
+}
+
+function maybeOfferIdleSubtract(awayMs) {
+  if (idleWarnMin <= 0 || awayMs < idleWarnMin * 60000) return;
+  const runningId = Object.keys(liveTimers).map(Number)[0];
+  if (runningId === undefined) return;
+  const leftAt = new Date(Date.now() - awayMs);
+  // Timer started while away (e.g. via Chrome extension) — nothing to subtract
+  if (liveTimers[runningId].startedAt >= leftAt) return;
+  const task  = tasks.find(t => t.id === runningId);
+  const hours = Math.floor(awayMs / 3600000), mins = Math.round((awayMs % 3600000) / 60000);
+  const awayTxt = hours > 0 ? `${hours}t ${mins}m` : `${mins} min`;
+  document.getElementById('idleMsg').textContent =
+    `Du har været væk i ${awayTxt}, mens timeren kørte${task ? ` på "${task.name}"` : ''}. ` +
+    `Skal fraværet fratrækkes, eller vil du beholde tiden?`;
+  const keepOld = document.getElementById('idleKeepBtn'), subOld = document.getElementById('idleSubtractBtn');
+  const keep = keepOld.cloneNode(true), sub = subOld.cloneNode(true);
+  keepOld.replaceWith(keep); subOld.replaceWith(sub);
+  const close = () => document.getElementById('idleDialog').classList.remove('show');
+  keep.addEventListener('click', close);
+  sub.addEventListener('click', async () => {
+    close();
+    await stopTimer(runningId, false, leftAt); // end the registration when you left
+    await startTimer(runningId);               // and continue tracking from now
+    renderTaskList();
+    toast(`Fravær på ${awayTxt} fratrukket`, 'ok');
+  });
+  document.getElementById('idleDialog').classList.add('show');
 }
 
 // ── TODAY ENTRIES ──
@@ -3368,6 +3445,7 @@ function loadSettingsForm() {
   document.getElementById('sDayGoal').value  = dayGoalH;
   document.getElementById('sWeekGoal').value = weekGoalH;
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
+  document.getElementById('sIdleMin').value = idleWarnMin;
   loadApiKeyStatus();
   renderFontPicker();
 }
@@ -3388,17 +3466,20 @@ async function saveGoals() {
   const dgRaw = document.getElementById('sDayGoal').value;
   const wgRaw = document.getElementById('sWeekGoal').value;
   const dehRaw = document.getElementById('sDayEnd').value; // "HH:MM"
-  const dg = parseFloat(dgRaw), wg = parseFloat(wgRaw);
+  const idleRaw = document.getElementById('sIdleMin').value;
+  const dg = parseFloat(dgRaw), wg = parseFloat(wgRaw), idle = parseInt(idleRaw);
   const [dehH, dehM] = dehRaw ? dehRaw.split(':').map(Number) : [17, 0];
   if (!dgRaw  || isNaN(dg)  || dg < 0.5 || dg > 24) { toast('Daily goal must be 0.5–24 hours', 'err'); return; }
   if (!wgRaw  || isNaN(wg)  || wg < 1   || wg > 80)  { toast('Weekly goal must be 1–80 hours', 'err');  return; }
   if (!dehRaw || isNaN(dehH) || dehH < 0 || dehH > 23) { toast('Ugyldig auto-stop tid', 'err'); return; }
   if (isNaN(dehM) || dehM < 0 || dehM > 59)            { toast('Ugyldig auto-stop tid', 'err'); return; }
+  if (idleRaw === '' || isNaN(idle) || idle < 0 || idle > 240) { toast('Fraværs-advarsel skal være 0–240 minutter', 'err'); return; }
   setBtnLoading('saveGoalsBtn', true);
   try {
     await apiFetch('/auth/me', { method: 'PATCH', body: { day_end_hour: dehH, day_end_minute: dehM } });
-    dayGoalH = dg; weekGoalH = wg;
+    dayGoalH = dg; weekGoalH = wg; idleWarnMin = idle;
     localStorage.setItem('tt_dayGoal', dg); localStorage.setItem('tt_weekGoal', wg);
+    localStorage.setItem('tt_idleMin', idle);
     me.day_end_hour = dehH; me.day_end_minute = dehM;
     scheduleAutoStop(); renderBottomStats();
     toast('Goals saved', 'ok');
