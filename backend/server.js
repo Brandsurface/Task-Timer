@@ -799,6 +799,106 @@ app.get('/api/admin/stats', auth, adminOnly, (req, res) => {
 });
 
 // ─────────────────────────────────────────
+//  BACKUP
+// ─────────────────────────────────────────
+// Consistent SQLite backups via VACUUM INTO — safe while the server runs,
+// unlike copying the .db file directly (recent data would be missing from
+// the copy because of WAL mode).
+
+const DB_FILE     = process.env.DB_PATH || path.join(__dirname, '../data/tasktimer.db');
+const BACKUPS_DIR = path.join(path.dirname(DB_FILE), 'backups');
+fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+
+const getSetting = (key, fallback = null) => {
+  const row = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key);
+  return row ? row.value : fallback;
+};
+const setSetting = (key, value) => db.prepare(`
+  INSERT INTO app_settings (key, value) VALUES (?, ?)
+  ON CONFLICT(key) DO UPDATE SET value = excluded.value
+`).run(key, String(value));
+
+// How many backups to keep (admin-configurable, default 1 = always just the newest)
+function backupKeepCount() {
+  const n = parseInt(getSetting('backup_keep', '1'));
+  return Number.isInteger(n) && n >= 1 && n <= 60 ? n : 1;
+}
+
+function listBackups() {
+  // Filename embeds the timestamp, so sorting by name = newest first
+  return fs.readdirSync(BACKUPS_DIR)
+    .filter(f => /^tasktimer-\d{4}-\d{2}-\d{2}-\d{4}\.db$/.test(f))
+    .map(f => ({ file: f, bytes: fs.statSync(path.join(BACKUPS_DIR, f)).size }))
+    .sort((a, b) => b.file.localeCompare(a.file));
+}
+
+function pruneBackups(keep) {
+  listBackups().slice(keep).forEach(b => {
+    try { fs.unlinkSync(path.join(BACKUPS_DIR, b.file)); } catch {}
+  });
+}
+
+function runBackup(trigger) {
+  const now   = new Date();
+  // 2026-07-11-0300 (Copenhagen time)
+  const stamp = now.toLocaleString('sv-SE', { timeZone: 'Europe/Copenhagen', hour12: false })
+                   .replace(' ', '-').replace(/:/g, '').slice(0, 15);
+  const file  = `tasktimer-${stamp}.db`;
+  // VACUUM INTO refuses to overwrite — write to a temp name, then rename
+  const tmp   = path.join(BACKUPS_DIR, `.writing-${Date.now()}.db`);
+  try {
+    db.prepare('VACUUM INTO ?').run(tmp);
+    fs.renameSync(tmp, path.join(BACKUPS_DIR, file));
+    pruneBackups(backupKeepCount());
+    setSetting('backup_last_run', now.toISOString());
+    setSetting('backup_last_status', 'ok');
+    console.log(`[TaskTimer] Backup OK → ${file} (${trigger})`);
+    return { ok: true, file };
+  } catch (e) {
+    try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch {}
+    setSetting('backup_last_run', now.toISOString());
+    setSetting('backup_last_status', `fejl: ${e.message}`);
+    console.error(`[TaskTimer] Backup failed (${trigger}):`, e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// Nightly backup — first tick after 03:00 Copenhagen time, once per day.
+// backup_last_auto_date persists across restarts so a redeploy doesn't re-run it.
+setInterval(() => {
+  const today = todayDK();
+  const hour  = parseInt(new Date().toLocaleTimeString('sv-SE', { timeZone: 'Europe/Copenhagen', hour: '2-digit', hour12: false }));
+  if (hour >= 3 && getSetting('backup_last_auto_date') !== today) {
+    setSetting('backup_last_auto_date', today);
+    runBackup('auto');
+  }
+}, 5 * 60 * 1000);
+
+app.get('/api/admin/backup', auth, adminOnly, (req, res) => {
+  res.json({
+    keep:       backupKeepCount(),
+    lastRun:    getSetting('backup_last_run'),
+    lastStatus: getSetting('backup_last_status'),
+    backups:    listBackups(),
+  });
+});
+
+app.post('/api/admin/backup', auth, adminOnly, (req, res) => {
+  const r = runBackup('manuel');
+  if (!r.ok) return res.status(500).json({ error: r.error });
+  res.json({ file: r.file, lastRun: getSetting('backup_last_run'), backups: listBackups() });
+});
+
+app.patch('/api/admin/backup', auth, adminOnly, (req, res) => {
+  const keep = parseInt(req.body.keep);
+  if (!Number.isInteger(keep) || keep < 1 || keep > 60)
+    return res.status(400).json({ error: 'Antal backups skal være mellem 1 og 60' });
+  setSetting('backup_keep', keep);
+  pruneBackups(keep);
+  res.json({ keep, backups: listBackups() });
+});
+
+// ─────────────────────────────────────────
 //  NOTES (BOX)
 // ─────────────────────────────────────────
 

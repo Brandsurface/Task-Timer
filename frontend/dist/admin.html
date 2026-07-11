@@ -575,6 +575,40 @@ canvas { width: 100% !important; }
               </table>
             </div>
           </div>
+
+          <!-- Backup -->
+          <div class="section">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Backup</div>
+                <div class="section-sub">Konsistent kopi af databasen — kører automatisk hver nat kl. 03</div>
+              </div>
+              <button class="btn btn-primary btn-sm" id="backupNowBtn">Tag backup nu</button>
+            </div>
+            <div class="table-wrap" style="padding:16px">
+              <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">
+                <div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Sidste backup</div>
+                  <div id="backupLastRun" style="font-size:14px;font-weight:600">—</div>
+                  <div id="backupLastStatus" style="font-size:12px;margin-top:2px"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Antal backups der gemmes</div>
+                  <div style="display:flex;gap:8px">
+                    <input class="form-input" id="backupKeep" type="number" min="1" max="60" style="width:80px;padding:6px 10px" />
+                    <button class="btn btn-ghost btn-sm" id="backupKeepSaveBtn">Gem</button>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px">1 = kun den nyeste beholdes (gårsdagens overskrives)</div>
+                </div>
+              </div>
+              <table>
+                <thead><tr><th>Fil</th><th>Størrelse</th></tr></thead>
+                <tbody id="backupTable">
+                  <tr><td colspan="2" style="color:var(--text-muted)">Indlæser...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -821,6 +855,7 @@ async function loadAll() {
     renderDashUserTable();
     renderUsersTable();
     renderEngagement();
+    loadBackup();
     await loadActivityChart();
     const now = new Date();
     document.getElementById('dashboardSub').textContent =
@@ -1137,6 +1172,51 @@ async function doDeleteUser() {
   btn.classList.remove('loading');
 }
 
+// ── BACKUP ──
+function fmtBytes(b) {
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  return Math.max(1, Math.round(b / 1024)) + ' KB';
+}
+
+function renderBackup(d) {
+  document.getElementById('backupKeep').value = d.keep;
+  document.getElementById('backupLastRun').textContent = d.lastRun
+    ? new Date(d.lastRun).toLocaleString('da-DK', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : 'Aldrig';
+  const st = document.getElementById('backupLastStatus');
+  st.textContent  = d.lastStatus === 'ok' ? '✓ Gennemført' : (d.lastStatus || '');
+  st.style.color  = d.lastStatus === 'ok' ? 'var(--green)' : 'var(--red)';
+  document.getElementById('backupTable').innerHTML = d.backups.length
+    ? d.backups.map(b => `<tr><td class="td-mono">${esc(b.file)}</td><td class="td-mono">${fmtBytes(b.bytes)}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="color:var(--text-muted)">Ingen backups endnu</td></tr>';
+}
+
+async function loadBackup() {
+  try { renderBackup(await apiFetch('/admin/backup')); } catch {}
+}
+
+async function backupNow() {
+  const btn = document.getElementById('backupNowBtn');
+  btn.disabled = true; btn.textContent = 'Kører...';
+  try {
+    const r = await apiFetch('/admin/backup', { method: 'POST' });
+    renderBackup({ keep: parseInt(document.getElementById('backupKeep').value) || 1,
+                   lastRun: r.lastRun, lastStatus: 'ok', backups: r.backups });
+    toast(`Backup gennemført: ${r.file}`, 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+  btn.disabled = false; btn.textContent = 'Tag backup nu';
+}
+
+async function saveBackupKeep() {
+  const keep = parseInt(document.getElementById('backupKeep').value);
+  if (!Number.isInteger(keep) || keep < 1 || keep > 60) { toast('Angiv et tal mellem 1 og 60', 'err'); return; }
+  try {
+    await apiFetch('/admin/backup', { method: 'PATCH', body: { keep } });
+    toast(`Gemmer nu de ${keep} nyeste backups`, 'ok');
+    loadBackup();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
 // ── NAV ──
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1160,6 +1240,9 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 });
 
 document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+document.getElementById('backupNowBtn').addEventListener('click', backupNow);
+document.getElementById('backupKeepSaveBtn').addEventListener('click', saveBackupKeep);
 
 document.getElementById('cancelPasswordBtn').addEventListener('click', () =>
   document.getElementById('modalPassword').classList.remove('show'));
