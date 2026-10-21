@@ -92,6 +92,7 @@ app.get('/favicon.png',          serveIcon('favicon.png'));
 app.get('/icon-192.png',         serveIcon('icon-192.png'));
 app.get('/icon-512.png',         serveIcon('icon-512.png'));
 app.get('/apple-touch-icon.png', serveIcon('apple-touch-icon.png'));
+app.get('/logo.png',             serveIcon('logo.png'));
 
 // Web App Manifest — enables "Add to Home Screen" on mobile
 app.get('/manifest.json', (req, res) => {

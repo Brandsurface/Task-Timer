@@ -179,7 +179,8 @@ body::after {
 /* AUTH */
 .auth-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
 .auth-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.auth-logo-icon { width: 54px; height: 54px; background: var(--orange-grad); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: var(--shadow-orange); }
+.auth-logo-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-orange); }
+.auth-logo-icon img { width: 100%; height: 100%; border-radius: 50%; display: block; }
 .auth-logo-name { font-family: var(--logo); font-size: 26px; font-weight: 600; letter-spacing: 0.02em; }
 .auth-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-md); }
 .auth-title { font-size: 15px; font-weight: 700; }
@@ -240,8 +241,6 @@ body::after {
 [data-theme="light"] .app-logo-full .st0 { fill: #1a1c20; }
 [data-theme="light"] .app-logo-full .st1 { fill: #cf6019; }
 .app-logo { width: 32px; height: 32px; background: var(--orange-grad); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: var(--shadow-orange); }
-.app-logo-svg { width: 60%; height: 60%; color: #fff; display: block; }
-.auth-logo-icon .app-logo-svg { width: 56%; height: 56%; }
 .offline-indicator { display: none; align-items: center; justify-content: center; width: 18px; height: 18px; margin-left: 4px; color: var(--orange); cursor: help; opacity: 0.85; }
 .offline-indicator.show { display: inline-flex; }
 .offline-indicator svg { width: 100%; height: 100%; animation: offline-spin 4.5s linear infinite; transform-origin: center; }
@@ -749,7 +748,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
 <div class="page active" id="authPage">
   <div class="auth-wrap">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg class="app-logo-svg" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M960 0c529.694 0 960 430.306 960 960s-430.306 960-960 960S0 1489.694 0 960c0-172.8 46.306-342.212 134.4-489.035l35.012-58.73 29.364 25.977L633.6 873.035A311.165 311.165 0 0 0 621.176 960c0 186.353 152.471 338.824 338.824 338.824S1298.824 1146.353 1298.824 960 1146.353 621.176 960 621.176c-19.2 0-38.4 2.26-56.47 5.648V0ZM322.334 242.372 845.93 766.08c33.657-19.765 72.283-31.962 114.071-31.962 124.574 0 225.882 101.308 225.882 225.882S1084.574 1185.882 960 1185.882 734.118 1084.574 734.118 960c0-41.788 12.197-80.414 31.962-114.07L242.372 322.333l79.962-79.962Z"/></svg></div>
+      <div class="auth-logo-icon"><img src="/logo.png" alt="TaskTimer" width="72" height="72"></div>
       <div class="auth-logo-name">TaskTimer</div>
     </div>
     <div class="auth-card" id="loginCard">
