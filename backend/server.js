@@ -390,6 +390,41 @@ app.get('/api/tasks', auth, (req, res) => {
   res.json(tasks);
 });
 
+// Name suggestions for the "New task" input. Searches every task the user has
+// ever saved — deleted (archived) ones included, so old jobs can be reused —
+// and returns distinct names, best match first. Filtering happens in JS because
+// SQLite's LIKE only ignores case for ASCII (æ/ø/å would not match Æ/Ø/Å).
+const SUGGEST_LIMIT = 8;
+
+app.get('/api/tasks/suggest', auth, (req, res) => {
+  const q = String(req.query.q ?? '').trim().slice(0, 80).toLowerCase();
+  if (q.length < 2) return res.json([]);
+  const tokens = q.split(/\s+/).slice(0, 6);
+
+  // Most recently worked-on jobs first (latest logged day, else creation date)
+  const rows = db.prepare(`
+    SELECT t.name, t.archived
+    FROM tasks t
+    LEFT JOIN (
+      SELECT task_id, MAX(date) AS d FROM time_entries WHERE user_id = ? GROUP BY task_id
+    ) l ON l.task_id = t.id
+    WHERE t.user_id = ?
+    ORDER BY COALESCE(l.d, substr(t.created_at, 1, 10)) DESC, t.id DESC
+  `).all(req.user.id, req.user.id);
+
+  const found = new Map(); // lower-cased name -> suggestion
+  for (const r of rows) {
+    const key = r.name.toLowerCase();
+    if (!tokens.every(tok => key.includes(tok))) continue;
+    const hit = found.get(key);
+    if (hit) hit.active = hit.active || !r.archived;
+    else found.set(key, { name: r.name, active: !r.archived, starts: key.startsWith(q) });
+  }
+  // Names that start with what was typed first; otherwise keep the recency order
+  const sorted = [...found.values()].sort((a, b) => b.starts - a.starts);
+  res.json(sorted.slice(0, SUGGEST_LIMIT).map(({ name, active }) => ({ name, active })));
+});
+
 // Case-insensitive duplicate check among the user's active (non-archived)
 // tasks. Archived tasks don't count — deleting a task archives it, and the
 // name must be reusable afterwards.

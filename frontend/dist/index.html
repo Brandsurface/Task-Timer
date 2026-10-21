@@ -294,6 +294,16 @@ body::after {
 .inline-input { flex: 1; background: var(--surface); border: 1px solid var(--orange); border-radius: var(--r-sm); padding: 9px 12px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: box-shadow 0.15s; }
 .inline-input:focus { box-shadow: 0 0 0 2px rgba(240,124,40,0.2); }
 .inline-input::placeholder { color: var(--text-muted); }
+.suggest-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.suggest-wrap .inline-input { width: 100%; min-width: 0; }
+.suggest-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 264px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r-sm); box-shadow: var(--shadow-md); }
+.suggest-list.show { display: block; }
+.suggest-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; border-bottom: 1px solid var(--border); }
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:hover, .suggest-item.kb { background: var(--surface3); color: var(--text); }
+.suggest-name { flex: 1; min-width: 0; overflow: hidden; overflow-wrap: anywhere; line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.suggest-name mark { background: none; color: var(--orange); font-weight: 600; }
+.suggest-tag { flex-shrink: 0; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
 
 /* TASK LIST */
 .task-list { flex: 1; padding: 6px 18px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
@@ -836,7 +846,10 @@ body.has-bg-image #bgDotOverlay { display: block; }
     </div>
     <div class="inline-form" id="newTaskForm">
       <div class="inline-form-row">
-        <input class="inline-input" id="newTaskInput" placeholder="Task name..." maxlength="80" />
+        <div class="suggest-wrap">
+          <input class="inline-input" id="newTaskInput" placeholder="Task name..." maxlength="80" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="taskSuggest" />
+          <div class="suggest-list" id="taskSuggest" role="listbox"></div>
+        </div>
         <button class="btn btn-primary btn-sm" id="addTaskBtn"><span class="btn-text">Add</span></button>
         <button class="btn btn-ghost btn-sm" id="cancelNewTaskBtn">✕</button>
       </div>
@@ -2372,11 +2385,79 @@ function showNewTask() {
 function hideNewTask() {
   document.getElementById('newTaskForm').classList.remove('show');
   document.getElementById('newTaskInput').value = '';
+  hideTaskSuggest();
+}
+
+// ── NEW-TASK NAME SUGGESTIONS ──
+// While typing a job name, offer names of jobs saved earlier (also deleted ones).
+let _suggestTimer = null, _suggestSeq = 0, _suggestItems = [], _suggestIdx = -1;
+
+function hideTaskSuggest() {
+  clearTimeout(_suggestTimer);
+  _suggestSeq++;                 // drop any response still in flight
+  _suggestItems = []; _suggestIdx = -1;
+  const list = document.getElementById('taskSuggest');
+  list.classList.remove('show'); list.innerHTML = '';
+  document.getElementById('newTaskInput').setAttribute('aria-expanded', 'false');
+}
+
+// Offline / server unreachable: search the tasks already loaded in the app
+function localTaskSuggestions(q) {
+  const tokens = q.toLowerCase().split(/\s+/);
+  return tasks.filter(t => tokens.every(k => t.name.toLowerCase().includes(k)))
+    .slice(0, 8).map(t => ({ name: t.name, active: true }));
+}
+
+async function fetchTaskSuggestions(q) {
+  const seq = ++_suggestSeq;
+  let items;
+  try { items = await apiFetch(`/tasks/suggest?q=${encodeURIComponent(q)}`); }
+  catch { items = localTaskSuggestions(q); }
+  if (seq !== _suggestSeq) return;   // a newer keystroke or a close superseded this
+  renderTaskSuggest(items, q);
+}
+
+function renderTaskSuggest(items, q) {
+  const list = document.getElementById('taskSuggest');
+  _suggestItems = items; _suggestIdx = -1;
+  if (!items.length) { hideTaskSuggest(); return; }
+  const words = q.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`(${words.join('|')})`, 'gi');
+  list.innerHTML = items.map((it, i) => `
+    <div class="suggest-item" role="option" data-i="${i}">
+      <span class="suggest-name">${it.name.split(re).map((part, k) => k % 2 ? `<mark>${esc(part)}</mark>` : esc(part)).join('')}</span>
+      ${it.active ? '<span class="suggest-tag" title="Already on your task list">On list</span>' : ''}
+    </div>`).join('');
+  list.querySelectorAll('.suggest-item').forEach(el => {
+    // mousedown (not click) so the input keeps focus and doesn't blur first
+    el.addEventListener('mousedown', e => { e.preventDefault(); pickTaskSuggestion(parseInt(el.dataset.i)); });
+  });
+  list.classList.add('show');
+  document.getElementById('newTaskInput').setAttribute('aria-expanded', 'true');
+}
+
+function moveTaskSuggest(delta) {
+  const n = _suggestItems.length; if (!n) return;
+  _suggestIdx = _suggestIdx < 0 ? (delta > 0 ? 0 : n - 1) : (_suggestIdx + delta + n) % n;
+  document.querySelectorAll('#taskSuggest .suggest-item').forEach((el, i) => {
+    el.classList.toggle('kb', i === _suggestIdx);
+    if (i === _suggestIdx) el.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function pickTaskSuggestion(i) {
+  const it = _suggestItems[i]; if (!it) return;
+  const input = document.getElementById('newTaskInput');
+  input.value = it.name;
+  hideTaskSuggest();
+  input.focus();
+  input.setSelectionRange(it.name.length, it.name.length);
 }
 
 async function submitNewTask() {
   const name = document.getElementById('newTaskInput').value.trim();
   if (!name) return;
+  hideTaskSuggest();
   // Duplicate names are not allowed — warn and keep the input so it can be edited
   const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase());
   if (dup) {
@@ -3906,7 +3987,28 @@ function setupEventListeners() {
   document.getElementById('bulkCancelBtn').addEventListener('click', exitSelectionMode);
   document.getElementById('addTaskBtn').addEventListener('click', submitNewTask);
   document.getElementById('cancelNewTaskBtn').addEventListener('click', hideNewTask);
-  document.getElementById('newTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitNewTask(); } });
+  const newTaskInput = document.getElementById('newTaskInput');
+  newTaskInput.addEventListener('input', () => {
+    clearTimeout(_suggestTimer);
+    const q = newTaskInput.value.trim();
+    if (q.length < 2) { hideTaskSuggest(); return; }
+    _suggestTimer = setTimeout(() => fetchTaskSuggestions(q), 150);
+  });
+  newTaskInput.addEventListener('keydown', e => {
+    const open = _suggestItems.length > 0;
+    if (e.key === 'ArrowDown' && open)      { e.preventDefault(); moveTaskSuggest(1); }
+    else if (e.key === 'ArrowUp' && open)   { e.preventDefault(); moveTaskSuggest(-1); }
+    else if (e.key === 'Escape' && open)    { e.stopPropagation(); hideTaskSuggest(); }  // first Esc closes the list only
+    else if (e.key === 'Tab' && open && _suggestIdx >= 0) { e.preventDefault(); pickTaskSuggestion(_suggestIdx); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (open && _suggestIdx >= 0) pickTaskSuggestion(_suggestIdx); else submitNewTask();
+    }
+  });
+  // Small delay so a tap on a suggestion registers; skip if the field was refocused meanwhile
+  newTaskInput.addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement !== newTaskInput) hideTaskSuggest();
+  }, 150));
   document.getElementById('resetYesBtn').addEventListener('click', doResetDay);
   document.getElementById('cancelResetBtn').addEventListener('click', hideResetConfirm);
   document.getElementById('endDayBtn').addEventListener('click', showEndDay);
@@ -4224,7 +4326,7 @@ function switchTab(name) {
 
 // ── MODALS ──
 function openModal(id)  { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
 
 // ── PAGE ──
 function showPage(id) {

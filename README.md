@@ -161,6 +161,9 @@ ports:
 - **Login / opret konto** — individuelle konti per bruger
 - **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop.
   Dubletnavne blokeres med en advarsel
+- **Forslag ved nyt job** — mens du skriver et jobnavn i "New task", foreslår appen
+  tidligere gemte jobs (også slettede) som matcher det du har skrevet, fx kundenummer
+  eller dele af navnet. Vælg med mus, eller pil op/ned + Enter; Esc lukker listen
 - **Opgavetyper** — vælg en type (fx Design, HTML-programmering, 3D render) fra en lille
   dropdown på hvert opgavekort. Listen styrer du selv under Settings → Task types
   (tilføj, omdøb, slet); dropdownen vises først, når der er oprettet mindst én type
