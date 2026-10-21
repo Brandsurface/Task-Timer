@@ -760,11 +760,12 @@ app.get('/api/export/csv', auth, (req, res) => {
     const s = String(v ?? '');
     return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
-  const decimalHours = sec => (sec / 3600).toFixed(2).replace('.', ',');
+  // Exact to the second — no rounding to minutes
+  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+  const decimalHours = sec => (sec / 3600).toFixed(4).replace('.', ',');
 
   let total = 0;
-  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm)', 'Timer (decimal)'].join(';')];
+  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm:ss)', 'Timer (decimal)'].join(';')];
   for (const r of rows) {
     total += r.total_seconds;
     const jobMatch = r.task_name.match(/^(\d{6})/);
@@ -798,16 +799,29 @@ app.get('/api/entries', auth, (req, res) => {
   res.json(entries);
 });
 
+// A single registration can be at most this long (guards against garbage input)
+const MAX_ENTRY_SECONDS = 31 * 86400;
+
 app.post('/api/entries', auth, (req, res) => {
-  const { task_id, date, start_time, end_time, note, committed } = req.body;
+  const { task_id, date, start_time, end_time, note, committed, seconds: exactSeconds } = req.body;
   if (!task_id || !date || !start_time || !end_time)
     return res.status(400).json({ error: 'Missing fields: task_id, date, start_time, end_time' });
 
   const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND user_id = ?').get(task_id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const seconds = timeToSeconds(start_time, end_time);
-  if (seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
+  // start_time/end_time only hold hours and minutes. The timer therefore sends the
+  // exact elapsed seconds, which are stored as-is — never rounded to the minute.
+  // Manually typed entries (HH:MM only) are still calculated from the two times.
+  let seconds;
+  if (exactSeconds !== undefined) {
+    seconds = exactSeconds;
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > MAX_ENTRY_SECONDS)
+      return res.status(400).json({ error: 'Invalid seconds value' });
+  } else {
+    seconds = timeToSeconds(start_time, end_time);
+    if (seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
+  }
 
   const result = db.prepare(`
     INSERT INTO time_entries (user_id, task_id, date, start_time, end_time, seconds, note, committed)
@@ -893,15 +907,19 @@ app.patch('/api/entries/:id', auth, (req, res) => {
     updates.task_id = task_id;
   }
 
-  // Allow direct seconds override (for edit-time dialog on active tasks)
-  if (seconds !== undefined && !updates.start_time && !updates.end_time) {
+  // Seconds are only recalculated (to the minute, from the typed times) when the
+  // start or end time actually changed. Editing just the note or the task keeps
+  // the exact registered seconds — the edit dialog always sends the unchanged times.
+  const timesChanged = (updates.start_time ?? entry.start_time) !== entry.start_time
+                    || (updates.end_time   ?? entry.end_time)   !== entry.end_time;
+
+  if (seconds !== undefined && !timesChanged) {
+    // Direct seconds override (for edit-time dialog on active tasks)
     const s = parseInt(seconds);
     if (isNaN(s) || s < 0) return res.status(400).json({ error: 'Invalid seconds value' });
     updates.seconds = s;
-  } else {
-    const newStart  = updates.start_time || entry.start_time;
-    const newEnd    = updates.end_time   || entry.end_time;
-    updates.seconds = timeToSeconds(newStart, newEnd);
+  } else if (timesChanged) {
+    updates.seconds = timeToSeconds(updates.start_time ?? entry.start_time, updates.end_time ?? entry.end_time);
     if (updates.seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
   }
 

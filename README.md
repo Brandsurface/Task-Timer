@@ -168,7 +168,9 @@ ports:
   dropdown på hvert opgavekort. Listen styrer du selv under Settings → Task types
   (tilføj, omdøb, slet); dropdownen vises først, når der er oprettet mindst én type
 - **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
-  vises live i browserfanens titel
+  vises live i browserfanens titel. Tiden registreres på sekundet og afrundes aldrig
+  (hverken op eller ned) — hverken når timeren stoppes, ved redigering, i listerne eller
+  i eksporten. Registreringer under 10 sekunder ignoreres dog (utilsigtede klik)
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
 - **Ren start på dagen** — valgfrit under Settings → Start of day. Første gang du åbner
   appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ via Select).
@@ -182,7 +184,8 @@ ports:
 - **Ugeoversigt** — naviger uger frem/tilbage; samme job vises som én samlet række
   pr. dag, som kan foldes ud så de enkelte registreringer kan redigeres/slettes
 - **Eksport** — PDF-rapport og CSV (semikolon + dansk decimal-komma, klar til Excel),
-  begge med valgfrit kundenummer-filter
+  begge med valgfrit kundenummer-filter. Tider vises med sekunder; CSV har t:mm:ss og
+  decimaltimer med 4 decimaler
 - **Backup** — automatisk konsistent databasebackup hver nat kl. 03; styres fra
   admin-panelet (antal der gemmes, manuel backup, status)
 - **Mål** — dag- og ugemål i procent

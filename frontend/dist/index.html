@@ -2379,7 +2379,8 @@ function logout() {
     outboxAdd({
       task_id: parseInt(idStr), date: localDateStr(s),
       start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
-      end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+      end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`,
+      seconds: elapsed
     });
   });
   token = null; localStorage.removeItem('tt_token'); localStorage.removeItem('tt_timers');
@@ -2615,7 +2616,8 @@ async function stopTimer(taskId, skipPersist = false, endAt = null) {
   const entryBody = {
     task_id: taskId, date: dateStr,
     start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
-    end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+    end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`,
+    seconds: elapsed   // the clock times above are minute-precise — the seconds are what counts
   };
   try {
     const entry = await apiFetch('/entries', { method: 'POST', body: entryBody });
@@ -2743,8 +2745,7 @@ function maybeOfferIdleSubtract(awayMs) {
   // Timer started while away (e.g. via Chrome extension) — nothing to subtract
   if (liveTimers[runningId].startedAt >= leftAt) return;
   const task  = tasks.find(t => t.id === runningId);
-  const hours = Math.floor(awayMs / 3600000), mins = Math.round((awayMs % 3600000) / 60000);
-  const awayTxt = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+  const awayTxt = hmsText(awayMs / 1000);
   document.getElementById('idleMsg').textContent =
     `You have been away for ${awayTxt} while the timer was running${task ? ` on "${task.name}"` : ''}. ` +
     `Subtract the absence, or keep the time?`;
@@ -3202,7 +3203,7 @@ async function showEndDay() {
     byTask[e.task_id].seconds += e.seconds;
   });
   document.getElementById('endDayList').innerHTML = Object.values(byTask).map(t =>
-    `<div class="edl-row"><span class="edl-task">${esc(t.name)}</span><span class="edl-time">${hm(t.seconds)}</span></div>`
+    `<div class="edl-row"><span class="edl-task">${esc(t.name)}</span><span class="edl-time">${hmsText(t.seconds)}</span></div>`
   ).join('');
   openModal('endDayModal');
 }
@@ -3269,7 +3270,8 @@ async function saveEditTime() {
       const body = {
         task_id: taskId, date: today,
         start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
-        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        seconds: newSecs
       };
       outboxAdd(body);
       // Local placeholder so the new total is visible immediately
@@ -3298,7 +3300,8 @@ async function saveEditTime() {
       const entry = await apiFetch('/entries', { method: 'POST', body: {
         task_id: taskId, date: todayStr(),
         start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
-        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        seconds: newSecs
       }});
       todayEntries.push(entry);
     }
@@ -3342,7 +3345,8 @@ async function saveBudgetModal() {
 function fmtDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}t ${m}m` : `${m}m`;
+  const s = Math.floor(seconds % 60);
+  return h > 0 ? `${h}t ${m}m ${s}s` : m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function fmtDateLong(dateStr) {
@@ -3643,14 +3647,14 @@ async function renderWeek() {
         const subRows = g.entries.map(e =>
           `<div class="week-entry we-child" data-eid="${e.id}">
              <div class="we-body"><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
-             <div class="we-dur">${hm(e.seconds)}</div>
+             <div class="we-dur">${hmsText(e.seconds)}</div>
              <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
            </div>`).join('');
         return `<div class="week-entry we-group${open ? ' open' : ''}" data-gkey="${gkey}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time} · ×${g.count}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
-           <div class="we-dur">${hm(g.seconds)}</div>
+           <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-chev">▸</div>
          </div>
          <div class="we-sub${open ? ' open' : ''}" data-gsub="${gkey}">${subRows}</div>`;
@@ -3659,7 +3663,7 @@ async function renderWeek() {
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
-           <div class="we-dur">${hm(g.seconds)}</div>
+           <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-del" data-did="${g.id}" title="Delete">✕</div>
          </div>`;
     };
@@ -3672,7 +3676,7 @@ async function renderWeek() {
         `<div class="week-entry">
            <div class="we-dot" style="background:${esc(t.color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(t.name)}</div><div class="we-meta">Running…</div></div>
-           <div class="we-dur">${hm(liveSec(t.id))}</div>
+           <div class="we-dur">${hmsText(liveSec(t.id))}</div>
          </div>`).join('');
       entriesHtml = committedRows + liveRows || '<div class="week-empty">No time yet</div>';
     } else {
@@ -3684,7 +3688,7 @@ async function renderWeek() {
       <div class="day-header${isToday ? ' today-hdr' : ''}">
         <div><div class="day-name">${DAY[i]}</div><div class="day-date">${d.getDate()}/${d.getMonth()+1}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
-          ${dayTotal > 0 ? `<div class="day-total">${hm(dayTotal)}</div>` : ''}
+          ${dayTotal > 0 ? `<div class="day-total">${hmsText(dayTotal)}</div>` : ''}
           ${!isToday ? `<button class="day-add-btn" data-adate="${dk}" title="Add entry">＋</button>` : ''}
         </div>
       </div>
@@ -3718,7 +3722,7 @@ async function renderWeek() {
     if (addBtn) addBtn.addEventListener('click', () => openAddEntry(addBtn.dataset.adate));
     container.appendChild(block);
   });
-  document.getElementById('weekTotal').textContent = hm(weekTotal);
+  document.getElementById('weekTotal').textContent = hmsText(weekTotal);
   // weekSecCache: committed entries for the full week + today's uncommitted/live
   // renderBottomStats adds live totalSec on top, so store only committed here
   weekSecCache = { seconds: entries.reduce((s, e) => s + e.seconds, 0), fetchedAt: Date.now() };
@@ -3726,10 +3730,12 @@ async function renderWeek() {
 }
 
 // ── EDIT COMMITTED ENTRY ──
+let _editEntryOrig = { start: '', end: '' };
 async function editEntry(id) {
   let entry;
   try { entry = await apiFetch(`/entries/${id}`); } catch { toast('Could not load entry', 'err'); return; }
   document.getElementById('editEntryId').value    = entry.id;
+  _editEntryOrig = { start: entry.start_time, end: entry.end_time };
   document.getElementById('editEntryStart').value = entry.start_time;
   document.getElementById('editEntryEnd').value   = entry.end_time;
   document.getElementById('editEntryNote').value  = entry.note || '';
@@ -3745,7 +3751,10 @@ async function saveEditEntry() {
   const note   = document.getElementById('editEntryNote').value.trim();
   const taskId = parseInt(document.getElementById('editEntryTask').value);
   if (!start || !end) { showError('editEntryError', 'Please fill in start and end time'); return; }
-  if (start >= end)   { showError('editEntryError', 'End time must be after start time'); return; }
+  // Times left as they were (e.g. only the note changed) keep the exact registered seconds,
+  // which can be shorter than a minute — so skip the check for those.
+  const timesUnchanged = start === _editEntryOrig.start && end === _editEntryOrig.end;
+  if (!timesUnchanged && start >= end) { showError('editEntryError', 'End time must be after start time'); return; }
   setBtnLoading('saveEntryBtn', true);
   try {
     await apiFetch(`/entries/${id}`, { method: 'PATCH', body: { start_time: start, end_time: end, note, task_id: taskId } });
@@ -4420,6 +4429,13 @@ function hm(s) {
   s = Math.max(0, Math.floor(s));
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
   return h === 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+// Exact duration to the second, for lists and reports: "1h 2m 37s", "25m 40s", "37s", "2h"
+function hmsText(s) {
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const parts = [h && `${h}h`, m && `${m}m`, sec && `${sec}s`].filter(Boolean);
+  return parts.length ? parts.join(' ') : '0s';
 }
 function pad(n) { return String(n).padStart(2,'0'); }
 function esc(s) {
