@@ -161,9 +161,31 @@ ports:
 - **Login / opret konto** — individuelle konti per bruger
 - **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop.
   Dubletnavne blokeres med en advarsel
+- **Forslag ved nyt job** — mens du skriver et jobnavn i "New task", foreslår appen
+  tidligere gemte jobs (også slettede) som matcher det du har skrevet, fx kundenummer
+  eller dele af navnet. Vælg med mus, eller pil op/ned + Enter; Esc lukker listen
+- **Opgavetyper** — vælg en type (fx Design, HTML-programmering, 3D render) fra en lille
+  dropdown på hvert opgavekort. Listen styrer du selv under Settings → Task types
+  (tilføj, omdøb, slet); dropdownen vises først, når der er oprettet mindst én type
 - **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
-  vises live i browserfanens titel
+  vises live i browserfanens titel. Tiden registreres på sekundet og afrundes aldrig
+  (hverken op eller ned) — hverken når timeren stoppes, ved redigering, i listerne eller
+  i eksporten. Registreringer under 10 sekunder ignoreres dog (utilsigtede klik)
+- **Idle Time** — valgfrit under Settings → Idle Time. Når du selv stopper et job, starter
+  appen et "Idle Time"-kort, så tiden indtil næste job også registreres. Næste job afslutter
+  det, og det kører aldrig forbi auto-stop-tidspunktet (heller ikke natten over). Idle Time
+  tæller ikke med i dag-/ugemål eller i PDF/CSV-eksport, men vises i Week. Pause selve
+  Idle Time-kortet for at stoppe registreringen
+- **Aktivt kort øverst** — kortet med den kørende timer glider op øverst på listen, og de
+  andre kort gør plads. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
+  tilbage til sin plads. Det kørende kort kan ikke trækkes rundt. Respekterer
+  "reducer bevægelse" i styresystemet
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
+- **Ren start på dagen** — valgfrit under Settings → Start of day. Første gang du åbner
+  appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ via Select).
+  Stjernemarkerede kort bliver, og det samme gør opgaver oprettet eller brugt i dag og
+  kørende timere. Fjernede opgaver er arkiveret, så historikken står i Week og navnene
+  kan findes igen via forslagene ved nyt job. Slået til midt på dagen starter det først i morgen
 - **Glemt timer** — har du været væk (fanen skjult, laptop lukket, browser genstartet)
   med en kørende timer, tilbyder appen at fratrække fraværet. Tærskel indstilles
   under Settings (standard 30 min, 0 = fra)
@@ -171,13 +193,14 @@ ports:
 - **Ugeoversigt** — naviger uger frem/tilbage; samme job vises som én samlet række
   pr. dag, som kan foldes ud så de enkelte registreringer kan redigeres/slettes
 - **Eksport** — PDF-rapport og CSV (semikolon + dansk decimal-komma, klar til Excel),
-  begge med valgfrit kundenummer-filter
+  begge med valgfrit kundenummer-filter. Tider vises med sekunder; CSV har t:mm:ss og
+  decimaltimer med 4 decimaler
 - **Backup** — automatisk konsistent databasebackup hver nat kl. 03; styres fra
   admin-panelet (antal der gemmes, manuel backup, status)
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
 - **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
-  adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+  ren dagsstart, Idle Time, opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
 - **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
   da de er dokumenter til kunder/bogholderi)
 

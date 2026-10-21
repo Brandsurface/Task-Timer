@@ -179,7 +179,8 @@ body::after {
 /* AUTH */
 .auth-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
 .auth-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.auth-logo-icon { width: 54px; height: 54px; background: var(--orange-grad); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: var(--shadow-orange); }
+.auth-logo-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-orange); }
+.auth-logo-icon img { width: 100%; height: 100%; border-radius: 50%; display: block; }
 .auth-logo-name { font-family: var(--logo); font-size: 26px; font-weight: 600; letter-spacing: 0.02em; }
 .auth-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-md); }
 .auth-title { font-size: 15px; font-weight: 700; }
@@ -240,8 +241,6 @@ body::after {
 [data-theme="light"] .app-logo-full .st0 { fill: #1a1c20; }
 [data-theme="light"] .app-logo-full .st1 { fill: #cf6019; }
 .app-logo { width: 32px; height: 32px; background: var(--orange-grad); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; box-shadow: var(--shadow-orange); }
-.app-logo-svg { width: 60%; height: 60%; color: #fff; display: block; }
-.auth-logo-icon .app-logo-svg { width: 56%; height: 56%; }
 .offline-indicator { display: none; align-items: center; justify-content: center; width: 18px; height: 18px; margin-left: 4px; color: var(--orange); cursor: help; opacity: 0.85; }
 .offline-indicator.show { display: inline-flex; }
 .offline-indicator svg { width: 100%; height: 100%; animation: offline-spin 4.5s linear infinite; transform-origin: center; }
@@ -295,6 +294,16 @@ body::after {
 .inline-input { flex: 1; background: var(--surface); border: 1px solid var(--orange); border-radius: var(--r-sm); padding: 9px 12px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: box-shadow 0.15s; }
 .inline-input:focus { box-shadow: 0 0 0 2px rgba(240,124,40,0.2); }
 .inline-input::placeholder { color: var(--text-muted); }
+.suggest-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.suggest-wrap .inline-input { width: 100%; min-width: 0; }
+.suggest-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60; max-height: 264px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--r-sm); box-shadow: var(--shadow-md); }
+.suggest-list.show { display: block; }
+.suggest-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; border-bottom: 1px solid var(--border); }
+.suggest-item:last-child { border-bottom: none; }
+.suggest-item:hover, .suggest-item.kb { background: var(--surface3); color: var(--text); }
+.suggest-name { flex: 1; min-width: 0; overflow: hidden; overflow-wrap: anywhere; line-height: 1.35; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.suggest-name mark { background: none; color: var(--orange); font-weight: 600; }
+.suggest-tag { flex-shrink: 0; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; }
 
 /* TASK LIST */
 .task-list { flex: 1; padding: 6px 18px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
@@ -308,17 +317,23 @@ body::after {
 .task-card-top { display: flex; align-items: center; gap: 10px; }
 .drag-handle { color: var(--text-muted); cursor: grab; font-size: 12px; padding: 2px 0; line-height: 1; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
 .task-card:hover .drag-handle { opacity: 1; }
+.task-card.active-task .drag-handle { visibility: hidden; }
 .drag-handle:active { cursor: grabbing; }
 .task-info { flex: 1; min-width: 0; }
 .task-name { font-size: 12px; font-weight: 400; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; line-height: 1.3; letter-spacing: 0.01em; }
 .pending-badge { display: inline-block; margin-left: 7px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange); background: var(--orange-dim); border: 1px solid rgba(240,124,40,0.35); border-radius: 4px; vertical-align: middle; }
 .task-name-edit { background: transparent; border: none; border-bottom: 1px solid var(--orange); outline: none; font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); width: 100%; padding: 0 0 1px; }
 .task-time { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--orange); margin-top: 1px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.03em; flex-wrap: wrap; }
+.task-sub { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+.task-type-select { margin-left: auto; flex: 1 1 56px; min-width: 0; max-width: 130px; height: 18px; padding: 0 16px 0 6px; -webkit-appearance: none; appearance: none; background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%238a8f98' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 5px center; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-family: var(--sans); font-size: 10px; line-height: 16px; cursor: pointer; outline: none; text-overflow: ellipsis; transition: border-color 0.12s, color 0.12s; }
+.task-type-select.has-type { color: var(--text-dim); }
+.task-type-select:hover, .task-type-select:focus { border-color: var(--orange); color: var(--text); }
+.task-type-select option { background: var(--surface2); color: var(--text); }
 .task-budget-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); font-weight: 400; }
 .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: blink 3s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
 .task-controls { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
-.ctrl { width: 30px; height: 30px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
+.ctrl { width: 24px; height: 24px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
 .ctrl:active { transform: scale(0.88); }
 .ctrl:hover { border-color: var(--border2); color: var(--text); }
 .ctrl.pp { background: var(--surface3); color: var(--text); }
@@ -420,6 +435,10 @@ body::after {
 .settings-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); }
 .settings-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .settings-row { display: flex; gap: 10px; }
+.type-list { display: flex; flex-direction: column; gap: 6px; }
+.type-row { display: flex; align-items: center; gap: 8px; }
+.type-row .form-input { padding: 7px 10px; font-size: 13px; }
+.type-empty { font-size: 12px; color: var(--text-muted); }
 .color-input { width: 100%; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--border); cursor: pointer; padding: 3px; background: var(--surface2); }
 .font-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 9px 12px; cursor: pointer; font-size: 14px; color: var(--text); transition: border-color 0.15s, background 0.15s; text-align: left; width: 100%; line-height: 1.3; }
 .font-btn.active { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
@@ -749,7 +768,7 @@ body.has-bg-image #bgDotOverlay { display: block; }
 <div class="page active" id="authPage">
   <div class="auth-wrap">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg class="app-logo-svg" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M960 0c529.694 0 960 430.306 960 960s-430.306 960-960 960S0 1489.694 0 960c0-172.8 46.306-342.212 134.4-489.035l35.012-58.73 29.364 25.977L633.6 873.035A311.165 311.165 0 0 0 621.176 960c0 186.353 152.471 338.824 338.824 338.824S1298.824 1146.353 1298.824 960 1146.353 621.176 960 621.176c-19.2 0-38.4 2.26-56.47 5.648V0ZM322.334 242.372 845.93 766.08c33.657-19.765 72.283-31.962 114.071-31.962 124.574 0 225.882 101.308 225.882 225.882S1084.574 1185.882 960 1185.882 734.118 1084.574 734.118 960c0-41.788 12.197-80.414 31.962-114.07L242.372 322.333l79.962-79.962Z"/></svg></div>
+      <div class="auth-logo-icon"><img src="/logo.png" alt="TaskTimer" width="72" height="72"></div>
       <div class="auth-logo-name">TaskTimer</div>
     </div>
     <div class="auth-card" id="loginCard">
@@ -828,7 +847,10 @@ body.has-bg-image #bgDotOverlay { display: block; }
     </div>
     <div class="inline-form" id="newTaskForm">
       <div class="inline-form-row">
-        <input class="inline-input" id="newTaskInput" placeholder="Task name..." maxlength="80" />
+        <div class="suggest-wrap">
+          <input class="inline-input" id="newTaskInput" placeholder="Task name..." maxlength="80" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="taskSuggest" />
+          <div class="suggest-list" id="taskSuggest" role="listbox"></div>
+        </div>
         <button class="btn btn-primary btn-sm" id="addTaskBtn"><span class="btn-text">Add</span></button>
         <button class="btn btn-ghost btn-sm" id="cancelNewTaskBtn">✕</button>
       </div>
@@ -936,6 +958,39 @@ body.has-bg-image #bgDotOverlay { display: block; }
             <span class="form-hint">If you've been away this long with a running timer, you'll be asked whether to subtract the absence. 0 = off</span>
           </div>
           <button class="btn btn-primary" id="saveGoalsBtn"><span class="btn-text">Save goals</span></button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Start of day</div>
+        <div class="settings-body">
+          <label class="remember-row">
+            <input type="checkbox" id="sCleanStart" class="remember-checkbox" />
+            <span class="remember-track"><span class="remember-thumb"></span></span>
+            <span class="remember-label">Start each day with a clean timer</span>
+          </label>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">The first time you open the app on a new day, task cards that aren't starred (★) are removed. Starred cards stay, and so does anything created or used today. Removed tasks keep their history in Week view. Star a card with Select → ★.</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Idle Time</div>
+        <div class="settings-body">
+          <label class="remember-row">
+            <input type="checkbox" id="sIdleTime" class="remember-checkbox" />
+            <span class="remember-track"><span class="remember-thumb"></span></span>
+            <span class="remember-label">Register idle time automatically</span>
+          </label>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">When you stop a job, the time until you start the next one is registered on an "Idle Time" card. Starting any job ends it, and it never runs past your auto-stop time. Idle Time is left out of your daily and weekly goals and out of PDF/CSV exports. Pause the Idle Time card itself to stop registering.</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Task types</div>
+        <div class="settings-body">
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a dropdown on every task card, e.g. Design, HTML programming or 3D render. Edit a name to rename it.</div>
+          <div class="type-list" id="taskTypeList"></div>
+          <div class="settings-row" style="gap:8px">
+            <input class="form-input" id="newTaskTypeInput" type="text" maxlength="40" placeholder="New type, e.g. Design" style="flex:1;min-width:0" />
+            <button class="btn btn-primary btn-sm" id="addTaskTypeBtn"><span class="btn-text">Add</span></button>
+          </div>
         </div>
       </div>
       <div class="settings-section">
@@ -1418,6 +1473,7 @@ const CHANGELOG = [
 let token        = localStorage.getItem('tt_token') || null;
 let me           = null;
 let tasks        = [];
+let taskTypes    = [];
 let liveTimers   = {};
 let todayEntries = [];
 let weekOffset   = 0;
@@ -1596,6 +1652,7 @@ function bootOffline() {
   me = cacheGet('tt_me') || me || { name: '' };
   if (me && me.preferences) { applyGradient(me.preferences); applyBackground(me.preferences); applyFont(me.preferences); }
   tasks = cacheGet('tt_tasks') || [];
+  taskTypes = cacheGet('tt_taskTypes') || [];
   mergePendingTasks();
   todayEntries = cacheGet('tt_today_entries') || [];
   const wk = cacheGet('tt_week'); if (wk) weekSecCache = wk;
@@ -1619,8 +1676,11 @@ async function refreshFromServer() {
     setOffline(false);
     await syncOutbox();          // create offline tasks + flush queued entries
     await loadTasks();           // canonical list (now with real ids)
+    await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
+    await capStaleIdleTimer();
+    await maybeCleanStart();
     
     renderTaskList();
     startExtensionPoll();        // guarded — won't double-start
@@ -2173,10 +2233,13 @@ async function init() {
     applyFont(me.preferences);
     loadBgImages();
     await loadTasks();
+    await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
     restoreTimers(); // ← restore running timers from localStorage
     await syncOutbox(); // ← sync any pending offline entries + tasks
+    await capStaleIdleTimer();
+    await maybeCleanStart();
 
     showPage('appPage');
     renderTaskList();
@@ -2311,9 +2374,11 @@ async function afterAuth(res) {
   applyGradient(me.preferences);
   applyBackground(me.preferences);
   applyFont(me.preferences);
-  await loadTasks(); await loadTodayEntries(); await fetchWeekTotal();
+  await loadTasks(); await loadTaskTypes(); await loadTodayEntries(); await fetchWeekTotal();
   restoreTimers();
   await syncOutbox();
+  await capStaleIdleTimer();
+  await maybeCleanStart();
   
   showPage('appPage'); renderTaskList(); scheduleAutoStop(); startTicker();
   startExtensionPoll();
@@ -2329,16 +2394,18 @@ function logout() {
     outboxAdd({
       task_id: parseInt(idStr), date: localDateStr(s),
       start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
-      end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+      end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`,
+      seconds: elapsed
     });
   });
   token = null; localStorage.removeItem('tt_token'); localStorage.removeItem('tt_timers');
-  me = null; tasks = []; liveTimers = {}; todayEntries = []; weekSecCache = null;
+  me = null; tasks = []; taskTypes = []; liveTimers = {}; todayEntries = []; weekSecCache = null;
   showPage('authPage');
 }
 
 // ── TASKS ──
 async function loadTasks() { tasks = await apiFetch('/tasks'); cacheSet('tt_tasks', tasks); mergePendingTasks(); }
+async function loadTaskTypes() { taskTypes = await apiFetch('/task-types'); cacheSet('tt_taskTypes', taskTypes); }
 
 function showNewTask() {
   hideResetConfirm();
@@ -2348,11 +2415,79 @@ function showNewTask() {
 function hideNewTask() {
   document.getElementById('newTaskForm').classList.remove('show');
   document.getElementById('newTaskInput').value = '';
+  hideTaskSuggest();
+}
+
+// ── NEW-TASK NAME SUGGESTIONS ──
+// While typing a job name, offer names of jobs saved earlier (also deleted ones).
+let _suggestTimer = null, _suggestSeq = 0, _suggestItems = [], _suggestIdx = -1;
+
+function hideTaskSuggest() {
+  clearTimeout(_suggestTimer);
+  _suggestSeq++;                 // drop any response still in flight
+  _suggestItems = []; _suggestIdx = -1;
+  const list = document.getElementById('taskSuggest');
+  list.classList.remove('show'); list.innerHTML = '';
+  document.getElementById('newTaskInput').setAttribute('aria-expanded', 'false');
+}
+
+// Offline / server unreachable: search the tasks already loaded in the app
+function localTaskSuggestions(q) {
+  const tokens = q.toLowerCase().split(/\s+/);
+  return tasks.filter(t => !t.is_idle && tokens.every(k => t.name.toLowerCase().includes(k)))
+    .slice(0, 8).map(t => ({ name: t.name, active: true }));
+}
+
+async function fetchTaskSuggestions(q) {
+  const seq = ++_suggestSeq;
+  let items;
+  try { items = await apiFetch(`/tasks/suggest?q=${encodeURIComponent(q)}`); }
+  catch { items = localTaskSuggestions(q); }
+  if (seq !== _suggestSeq) return;   // a newer keystroke or a close superseded this
+  renderTaskSuggest(items, q);
+}
+
+function renderTaskSuggest(items, q) {
+  const list = document.getElementById('taskSuggest');
+  _suggestItems = items; _suggestIdx = -1;
+  if (!items.length) { hideTaskSuggest(); return; }
+  const words = q.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`(${words.join('|')})`, 'gi');
+  list.innerHTML = items.map((it, i) => `
+    <div class="suggest-item" role="option" data-i="${i}">
+      <span class="suggest-name">${it.name.split(re).map((part, k) => k % 2 ? `<mark>${esc(part)}</mark>` : esc(part)).join('')}</span>
+      ${it.active ? '<span class="suggest-tag" title="Already on your task list">On list</span>' : ''}
+    </div>`).join('');
+  list.querySelectorAll('.suggest-item').forEach(el => {
+    // mousedown (not click) so the input keeps focus and doesn't blur first
+    el.addEventListener('mousedown', e => { e.preventDefault(); pickTaskSuggestion(parseInt(el.dataset.i)); });
+  });
+  list.classList.add('show');
+  document.getElementById('newTaskInput').setAttribute('aria-expanded', 'true');
+}
+
+function moveTaskSuggest(delta) {
+  const n = _suggestItems.length; if (!n) return;
+  _suggestIdx = _suggestIdx < 0 ? (delta > 0 ? 0 : n - 1) : (_suggestIdx + delta + n) % n;
+  document.querySelectorAll('#taskSuggest .suggest-item').forEach((el, i) => {
+    el.classList.toggle('kb', i === _suggestIdx);
+    if (i === _suggestIdx) el.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function pickTaskSuggestion(i) {
+  const it = _suggestItems[i]; if (!it) return;
+  const input = document.getElementById('newTaskInput');
+  input.value = it.name;
+  hideTaskSuggest();
+  input.focus();
+  input.setSelectionRange(it.name.length, it.name.length);
 }
 
 async function submitNewTask() {
   const name = document.getElementById('newTaskInput').value.trim();
   if (!name) return;
+  hideTaskSuggest();
   // Duplicate names are not allowed — warn and keep the input so it can be edited
   const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase());
   if (dup) {
@@ -2467,13 +2602,13 @@ async function reorderTasks(fromId, toId) {
 }
 
 // ── TIMER ENGINE ──
-async function startTimer(taskId) {
+async function startTimer(taskId, silent = false) {
   const running = Object.keys(liveTimers).map(Number).filter(id => id !== taskId);
   if (running.length > 0) await Promise.all(running.map(id => stopTimer(id)));
   if (liveTimers[taskId]) return;
   liveTimers[taskId] = { startedAt: new Date() };
   persistTimers();
-  pingStart();
+  if (!silent) pingStart();
   renderTaskList();
   updateTabTitle();
   // Brief pop animation on the card
@@ -2496,7 +2631,8 @@ async function stopTimer(taskId, skipPersist = false, endAt = null) {
   const entryBody = {
     task_id: taskId, date: dateStr,
     start_time: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
-    end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`
+    end_time:   `${pad(e.getHours())}:${pad(e.getMinutes())}`,
+    seconds: elapsed   // the clock times above are minute-precise — the seconds are what counts
   };
   try {
     const entry = await apiFetch('/entries', { method: 'POST', body: entryBody });
@@ -2601,6 +2737,8 @@ document.addEventListener('visibilitychange', () => {
     const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
     _hiddenAt = null;
     maybeOfferIdleSubtract(away);
+    // A tab left open overnight counts as a new day when you come back to it
+    (async () => { await capStaleIdleTimer(); if (await maybeCleanStart()) renderTaskList(); })();
   }
 });
 
@@ -2618,12 +2756,12 @@ function maybeOfferIdleSubtract(awayMs) {
   if (idleWarnMin <= 0 || awayMs < idleWarnMin * 60000) return;
   const runningId = Object.keys(liveTimers).map(Number)[0];
   if (runningId === undefined) return;
+  if (tasks.find(t => t.id === runningId)?.is_idle) return;   // Idle Time is the away time
   const leftAt = new Date(Date.now() - awayMs);
   // Timer started while away (e.g. via Chrome extension) — nothing to subtract
   if (liveTimers[runningId].startedAt >= leftAt) return;
   const task  = tasks.find(t => t.id === runningId);
-  const hours = Math.floor(awayMs / 3600000), mins = Math.round((awayMs % 3600000) / 60000);
-  const awayTxt = hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+  const awayTxt = hmsText(awayMs / 1000);
   document.getElementById('idleMsg').textContent =
     `You have been away for ${awayTxt} while the timer was running${task ? ` on "${task.name}"` : ''}. ` +
     `Subtract the absence, or keep the time?`;
@@ -2662,8 +2800,35 @@ function budgetColor(pct) {
   return 'var(--red)';
 }
 
+// ── CARD SLIDE ANIMATION (FLIP) ──
+// renderTaskList rebuilds every card. So that a card glides to its new place instead of
+// jumping, note where each card was, rebuild, then animate from the old position.
+let _renderedRunning = '';   // ids of the running timers at the last render
+
+function cardTops(list) {
+  const tops = new Map();
+  list.querySelectorAll('.task-card').forEach(c => tops.set(c.dataset.id, c.getBoundingClientRect().top));
+  return tops;
+}
+
+function slideCards(list, tops) {
+  if (!tops.size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  list.querySelectorAll('.task-card').forEach(card => {
+    const was = tops.get(card.dataset.id);
+    if (was === undefined) return;                       // brand-new card — it fades in on its own
+    const delta = was - card.getBoundingClientRect().top;
+    if (Math.abs(delta) < 1) return;                     // didn't move
+    card.style.zIndex = card.classList.contains('active-task') ? 2 : 1;   // running card glides over the others
+    card.animate(
+      [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+      { duration: 400, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', composite: 'add' }
+    ).onfinish = () => { card.style.zIndex = ''; };
+  });
+}
+
 function renderTaskList() {
   const el = document.getElementById('taskList');
+  const tops = cardTops(el);   // card positions before this re-render
   if (!tasks.length) {
     el.innerHTML = `<div class="empty-state">No tasks yet<br>
       <span style="font-size:11px;color:var(--text-muted)">Create your first task with ＋ New task</span></div>`;
@@ -2671,9 +2836,10 @@ function renderTaskList() {
   }
   el.innerHTML = '';
   // Tasks arrive from the API already sorted by the user's chosen order
-  // (sort_order ASC). We render them as-is — no auto-hopping of running
-  // timers — so the order only changes when the user reorders or adds a task.
-  const sorted = tasks;
+  // (sort_order ASC). The card with the running timer is shown first; every other
+  // card keeps the user's own order. The stored order is never touched, so when the
+  // timer stops the card slides back to its own place.
+  const sorted = [...tasks].sort((a, b) => !!liveTimers[b.id] - !!liveTimers[a.id]);
   sorted.forEach(task => {
     const isRunning = !!liveTimers[task.id];
     const sec = liveSec(task.id);
@@ -2684,7 +2850,7 @@ function renderTaskList() {
       + (selectionMode ? ' in-selection' : '')
       + (selectionMode && selectedTaskIds.has(task.id) ? ' bulk-selected' : '')
       + (selectionMode && task.pinned ? ' is-pinned' : '');
-    card.draggable = !selectionMode;
+    card.draggable = !selectionMode && !isRunning;   // the running card is pinned to the top, not sortable
     card.dataset.id = task.id;
 
     const pct = budget > 0 ? Math.min(100, (totalSecForBudget(task) / budget) * 100) : 0;
@@ -2701,7 +2867,10 @@ function renderTaskList() {
           : `<div class="drag-handle" title="Drag to sort">⠿</div>`}
         <div class="task-info">
           <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Created offline — syncs when online">offline</span>' : ''}</div>
-          <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+          <div class="task-sub">
+            <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+            ${!selectionMode && !task._pending ? taskTypeSelectHtml(task) : ''}
+          </div>
         </div>
         ${selectionMode
           ? `<button class="ctrl pin-btn${task.pinned ? ' pinned' : ''}" title="${task.pinned ? 'Unpin — allow deletion' : 'Pin — protect from deletion'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="${task.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg></button>`
@@ -2730,14 +2899,21 @@ function renderTaskList() {
     } else {
       // Normal mode
       card.addEventListener('click', e => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button, select')) return;
         selectTask(task.id);
       });
+      const typeSel = card.querySelector('.task-type-select');
+      if (typeSel) {
+        typeSel.addEventListener('change', () => setTaskType(task.id, typeSel));
+        // A draggable card swallows clicks on its form controls in some browsers
+        typeSel.addEventListener('mouseenter', () => { card.draggable = false; });
+        typeSel.addEventListener('mouseleave', () => { card.draggable = !isRunning; });
+      }
       card.querySelector('.task-name').addEventListener('dblclick', () => startEditTaskName(task.id));
       card.querySelector('.task-time').addEventListener('dblclick', () => openEditTime(task.id));
       card.querySelector('.ctrl.pp').addEventListener('click', () => {
         selectTask(task.id);
-        if (isRunning) stopTimer(task.id).then(() => renderTaskList());
+        if (isRunning) stopJob(task.id).then(() => renderTaskList());
         else           startTimer(task.id);
       });
       card.querySelector('.ctrl.copy-btn').addEventListener('click', () => {
@@ -2748,17 +2924,194 @@ function renderTaskList() {
       card.querySelector('.ctrl.del').addEventListener('click', () => requestDeleteTask(task.id));
       card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', String(task.id)); setTimeout(() => card.classList.add('dragging'), 0); });
       card.addEventListener('dragend',   () => card.classList.remove('dragging'));
-      card.addEventListener('dragover',  e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragover',  e => { if (isRunning) return; e.preventDefault(); card.classList.add('drag-over'); });
       card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
       card.addEventListener('drop',      e => {
         e.preventDefault(); card.classList.remove('drag-over');
+        if (isRunning) return;
         const fId = parseInt(e.dataTransfer.getData('text/plain'));
         if (fId !== task.id) reorderTasks(fId, task.id);
       });
     }
     el.appendChild(card);
   });
+  // A timer that just started jumps to the top — scroll up so its card stays in view
+  const runningNow = tasks.filter(t => liveTimers[t.id]).map(t => t.id).join(',');
+  if (runningNow && runningNow !== _renderedRunning) el.scrollTop = 0;
+  _renderedRunning = runningNow;
+  slideCards(el, tops);
   renderBottomStats();
+}
+
+// ── IDLE TIME ──
+// Optional setting: when you stop a job yourself, the app starts the "Idle Time" card,
+// so the time until your next job is registered too. It is a normal timer: starting any
+// job stops it again (one timer at a time), and it ends at your auto-stop time.
+function idleTask() { return tasks.find(t => t.is_idle); }
+
+// "Stop" pressed on a card or Space: stop the job, then let idle time take over
+async function stopJob(taskId) {
+  await stopTimer(taskId);
+  await startIdleTimer(taskId);
+}
+
+async function startIdleTimer(stoppedId) {
+  if (!me?.idle_time) return;
+  if (tasks.find(t => t.id === stoppedId)?.is_idle) return;   // pausing Idle Time itself is deliberate
+  if (Object.keys(liveTimers).length) return;                  // another timer is already running
+  if (new Date() >= autoStopToday(new Date())) return;         // the workday is over
+  let idle = idleTask();
+  if (!idle) {
+    if (!navigator.onLine) return;
+    try { idle = await apiFetch('/idle-task', { method: 'POST' }); tasks.push(idle); }
+    catch { return; }
+  }
+  await startTimer(idle.id, true);   // silent: no start beep right after the stop beep
+}
+
+// The auto-stop moment on the same calendar day as `d`
+function autoStopToday(d) {
+  const t = new Date(d);
+  t.setHours(me?.day_end_hour ?? 17, me?.day_end_minute ?? 0, 0, 0);
+  return t;
+}
+
+// Idle time must not run through the night: an Idle Time timer left over from an earlier
+// session (browser closed, laptop asleep) is ended at the auto-stop time of the day it began.
+async function capStaleIdleTimer() {
+  const idle = idleTask(), lt = idle && liveTimers[idle.id];
+  if (!lt) return;
+  const cap = autoStopToday(lt.startedAt);
+  if (new Date() >= cap) await stopTimer(idle.id, false, cap);
+}
+
+async function saveIdleTime(enabled) {
+  const box = document.getElementById('sIdleTime');
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { idle_time: enabled } });
+    me.idle_time = updated.idle_time; cacheSet('tt_me', me);
+    if (enabled) { await loadTasks(); renderTaskList(); }   // the Idle Time card exists now
+    toast(enabled ? 'Idle Time on' : 'Idle Time off', 'ok');
+  } catch (e) { box.checked = !enabled; toast(e.message, 'err'); }
+}
+
+// ── CLEAN START ──
+// Optional setting: on the first visit of a new day the server archives the
+// task cards that aren't starred (pinned). The server decides what is safe to
+// remove; we only say which timers are running and drop the answer from the list.
+async function maybeCleanStart() {
+  if (!token || !me?.clean_start || !navigator.onLine) return false;
+  if (me.clean_start_date && me.clean_start_date >= todayStr()) return false;
+  try {
+    const res = await apiFetch('/tasks/clean-start', { method: 'POST', body: { keep: Object.keys(liveTimers).map(Number) } });
+    me.clean_start_date = res.date; cacheSet('tt_me', me);
+    if (!res.ids.length) return false;
+    const gone = new Set(res.ids);
+    tasks = tasks.filter(t => !gone.has(t.id));
+    cacheSet('tt_tasks', tasks.filter(t => !t._pending));
+    if (gone.has(selectedTaskId)) selectedTaskId = null;
+    toast(`Clean start: ${res.ids.length} task${res.ids.length === 1 ? '' : 's'} from earlier days removed`, 'ok');
+    return true;
+  } catch { return false; }  // offline or server hiccup — tried again next time the app is opened
+}
+
+async function saveCleanStart(enabled) {
+  const box = document.getElementById('sCleanStart');
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { clean_start: enabled } });
+    me.clean_start = updated.clean_start; me.clean_start_date = updated.clean_start_date;
+    cacheSet('tt_me', me);
+    toast(enabled ? 'Clean start on — first clean is tomorrow' : 'Clean start off', 'ok');
+  } catch (e) { box.checked = !enabled; toast(e.message, 'err'); }
+}
+
+// ── TASK TYPES ──
+// The dropdown is hidden until the user has added at least one type in Settings.
+function taskTypeSelectHtml(task) {
+  if (!taskTypes.length) return '';
+  const known = taskTypes.some(t => t.id === task.task_type_id);
+  return `<select class="task-type-select${known ? ' has-type' : ''}" title="Task type">
+      <option value="">No type</option>
+      ${taskTypes.map(t => `<option value="${t.id}"${t.id === task.task_type_id ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}
+    </select>`;
+}
+
+async function setTaskType(taskId, sel) {
+  const task = tasks.find(t => t.id === taskId); if (!task) return;
+  const prev = task.task_type_id ?? null;
+  const next = sel.value === '' ? null : parseInt(sel.value);
+  sel.classList.toggle('has-type', next !== null);
+  try {
+    await apiFetch(`/tasks/${taskId}`, { method: 'PATCH', body: { task_type_id: next } });
+    task.task_type_id = next;
+    cacheSet('tt_tasks', tasks.filter(t => !t._pending));
+  } catch (e) {
+    sel.value = prev === null ? '' : String(prev);
+    sel.classList.toggle('has-type', prev !== null);
+    toast(e.message, 'err');
+  }
+}
+
+function renderTaskTypeSettings() {
+  const el = document.getElementById('taskTypeList');
+  if (!taskTypes.length) {
+    el.innerHTML = '<div class="type-empty">No types yet — add your first one below.</div>';
+    return;
+  }
+  el.innerHTML = taskTypes.map(t => `
+    <div class="type-row" data-id="${t.id}">
+      <input class="form-input" type="text" maxlength="40" value="${esc(t.name)}" aria-label="Type name">
+      <button class="ctrl del" title="Delete type">🗑</button>
+    </div>`).join('');
+  el.querySelectorAll('.type-row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    const input = row.querySelector('input');
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { input.value = taskTypes.find(t => t.id === id)?.name ?? ''; input.blur(); }
+    });
+    input.addEventListener('change', () => renameTaskType(id, input));
+    row.querySelector('.del').addEventListener('click', () => requestDeleteTaskType(id));
+  });
+}
+
+async function addTaskType() {
+  const input = document.getElementById('newTaskTypeInput');
+  const name = input.value.trim();
+  if (!name) return;
+  setBtnLoading('addTaskTypeBtn', true);
+  try {
+    taskTypes.push(await apiFetch('/task-types', { method: 'POST', body: { name } }));
+    cacheSet('tt_taskTypes', taskTypes);
+    input.value = '';
+    renderTaskTypeSettings(); renderTaskList();
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('addTaskTypeBtn', false);
+}
+
+async function renameTaskType(id, input) {
+  const type = taskTypes.find(t => t.id === id); if (!type) return;
+  const name = input.value.trim();
+  if (name === type.name) { input.value = type.name; return; }
+  try {
+    type.name = (await apiFetch(`/task-types/${id}`, { method: 'PATCH', body: { name } })).name;
+    cacheSet('tt_taskTypes', taskTypes);
+    renderTaskList();
+  } catch (e) { toast(e.message, 'err'); }
+  input.value = type.name;
+}
+
+function requestDeleteTaskType(id) {
+  const type = taskTypes.find(t => t.id === id); if (!type) return;
+  showConfirm('Delete type', `"${type.name}" is removed from the list and cleared from tasks that use it.`, async () => {
+    try {
+      await apiFetch(`/task-types/${id}`, { method: 'DELETE' });
+      taskTypes = taskTypes.filter(t => t.id !== id);
+      tasks.forEach(t => { if (t.task_type_id === id) t.task_type_id = null; });
+      cacheSet('tt_taskTypes', taskTypes);
+      renderTaskTypeSettings(); renderTaskList();
+    } catch (e) { toast(e.message, 'err'); }
+  });
 }
 
 function selectTask(id) {
@@ -2908,15 +3261,16 @@ function totalSecForBudget(task) {
 }
 
 function renderBottomStats() {
-  let totalSec = 0;
-  tasks.forEach(t => { totalSec += liveSec(t.id); });
+  // Total shows everything registered today; goals count work only, not Idle Time
+  let totalSec = 0, workSec = 0;
+  tasks.forEach(t => { const s = liveSec(t.id); totalSec += s; if (!t.is_idle) workSec += s; });
   document.getElementById('totalToday').textContent = hms(totalSec);
-  document.getElementById('taskCount').textContent  = tasks.length;
-  const dg = dayGoalH * 3600, dp = dg > 0 ? Math.min(100, Math.round(totalSec / dg * 100)) : 0;
+  document.getElementById('taskCount').textContent  = tasks.filter(t => !t.is_idle).length;
+  const dg = dayGoalH * 3600, dp = dg > 0 ? Math.min(100, Math.round(workSec / dg * 100)) : 0;
   const dpEl = document.getElementById('dayPct');
   dpEl.textContent = dg > 0 ? `${dp}%` : '—';
   dpEl.className = 'goal-pill-value' + (dp >= 100 ? ' at-goal' : '');
-  const wSec = (weekSecCache ? weekSecCache.seconds : 0) + totalSec;
+  const wSec = (weekSecCache ? weekSecCache.seconds : 0) + workSec;
   const wg = weekGoalH * 3600, wp = wg > 0 ? Math.min(100, Math.round(wSec / wg * 100)) : 0;
   const wpEl = document.getElementById('weekPct');
   wpEl.textContent = wg > 0 ? `${wp}%` : '—';
@@ -2952,7 +3306,7 @@ async function showEndDay() {
     byTask[e.task_id].seconds += e.seconds;
   });
   document.getElementById('endDayList').innerHTML = Object.values(byTask).map(t =>
-    `<div class="edl-row"><span class="edl-task">${esc(t.name)}</span><span class="edl-time">${hm(t.seconds)}</span></div>`
+    `<div class="edl-row"><span class="edl-task">${esc(t.name)}</span><span class="edl-time">${hmsText(t.seconds)}</span></div>`
   ).join('');
   openModal('endDayModal');
 }
@@ -3019,7 +3373,8 @@ async function saveEditTime() {
       const body = {
         task_id: taskId, date: today,
         start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
-        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        seconds: newSecs
       };
       outboxAdd(body);
       // Local placeholder so the new total is visible immediately
@@ -3048,7 +3403,8 @@ async function saveEditTime() {
       const entry = await apiFetch('/entries', { method: 'POST', body: {
         task_id: taskId, date: todayStr(),
         start_time: `${pad(startD.getHours())}:${pad(startD.getMinutes())}`,
-        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`
+        end_time:   `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+        seconds: newSecs
       }});
       todayEntries.push(entry);
     }
@@ -3092,7 +3448,8 @@ async function saveBudgetModal() {
 function fmtDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}t ${m}m` : `${m}m`;
+  const s = Math.floor(seconds % 60);
+  return h > 0 ? `${h}t ${m}m ${s}s` : m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function fmtDateLong(dateStr) {
@@ -3393,14 +3750,14 @@ async function renderWeek() {
         const subRows = g.entries.map(e =>
           `<div class="week-entry we-child" data-eid="${e.id}">
              <div class="we-body"><div class="we-meta">${e.start_time}–${e.end_time}${e.note ? ' · '+esc(e.note) : ''}</div></div>
-             <div class="we-dur">${hm(e.seconds)}</div>
+             <div class="we-dur">${hmsText(e.seconds)}</div>
              <div class="we-del" data-did="${e.id}" title="Delete">✕</div>
            </div>`).join('');
         return `<div class="week-entry we-group${open ? ' open' : ''}" data-gkey="${gkey}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time} · ×${g.count}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
-           <div class="we-dur">${hm(g.seconds)}</div>
+           <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-chev">▸</div>
          </div>
          <div class="we-sub${open ? ' open' : ''}" data-gsub="${gkey}">${subRows}</div>`;
@@ -3409,7 +3766,7 @@ async function renderWeek() {
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
-           <div class="we-dur">${hm(g.seconds)}</div>
+           <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-del" data-did="${g.id}" title="Delete">✕</div>
          </div>`;
     };
@@ -3422,7 +3779,7 @@ async function renderWeek() {
         `<div class="week-entry">
            <div class="we-dot" style="background:${esc(t.color||'#f07c28')}"></div>
            <div class="we-body"><div class="we-task">${esc(t.name)}</div><div class="we-meta">Running…</div></div>
-           <div class="we-dur">${hm(liveSec(t.id))}</div>
+           <div class="we-dur">${hmsText(liveSec(t.id))}</div>
          </div>`).join('');
       entriesHtml = committedRows + liveRows || '<div class="week-empty">No time yet</div>';
     } else {
@@ -3434,7 +3791,7 @@ async function renderWeek() {
       <div class="day-header${isToday ? ' today-hdr' : ''}">
         <div><div class="day-name">${DAY[i]}</div><div class="day-date">${d.getDate()}/${d.getMonth()+1}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
-          ${dayTotal > 0 ? `<div class="day-total">${hm(dayTotal)}</div>` : ''}
+          ${dayTotal > 0 ? `<div class="day-total">${hmsText(dayTotal)}</div>` : ''}
           ${!isToday ? `<button class="day-add-btn" data-adate="${dk}" title="Add entry">＋</button>` : ''}
         </div>
       </div>
@@ -3468,7 +3825,7 @@ async function renderWeek() {
     if (addBtn) addBtn.addEventListener('click', () => openAddEntry(addBtn.dataset.adate));
     container.appendChild(block);
   });
-  document.getElementById('weekTotal').textContent = hm(weekTotal);
+  document.getElementById('weekTotal').textContent = hmsText(weekTotal);
   // weekSecCache: committed entries for the full week + today's uncommitted/live
   // renderBottomStats adds live totalSec on top, so store only committed here
   weekSecCache = { seconds: entries.reduce((s, e) => s + e.seconds, 0), fetchedAt: Date.now() };
@@ -3476,10 +3833,12 @@ async function renderWeek() {
 }
 
 // ── EDIT COMMITTED ENTRY ──
+let _editEntryOrig = { start: '', end: '' };
 async function editEntry(id) {
   let entry;
   try { entry = await apiFetch(`/entries/${id}`); } catch { toast('Could not load entry', 'err'); return; }
   document.getElementById('editEntryId').value    = entry.id;
+  _editEntryOrig = { start: entry.start_time, end: entry.end_time };
   document.getElementById('editEntryStart').value = entry.start_time;
   document.getElementById('editEntryEnd').value   = entry.end_time;
   document.getElementById('editEntryNote').value  = entry.note || '';
@@ -3495,7 +3854,10 @@ async function saveEditEntry() {
   const note   = document.getElementById('editEntryNote').value.trim();
   const taskId = parseInt(document.getElementById('editEntryTask').value);
   if (!start || !end) { showError('editEntryError', 'Please fill in start and end time'); return; }
-  if (start >= end)   { showError('editEntryError', 'End time must be after start time'); return; }
+  // Times left as they were (e.g. only the note changed) keep the exact registered seconds,
+  // which can be shorter than a minute — so skip the check for those.
+  const timesUnchanged = start === _editEntryOrig.start && end === _editEntryOrig.end;
+  if (!timesUnchanged && start >= end) { showError('editEntryError', 'End time must be after start time'); return; }
   setBtnLoading('saveEntryBtn', true);
   try {
     await apiFetch(`/entries/${id}`, { method: 'PATCH', body: { start_time: start, end_time: end, note, task_id: taskId } });
@@ -3546,6 +3908,9 @@ function loadSettingsForm() {
   document.getElementById('sWeekGoal').value = weekGoalH;
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
   document.getElementById('sIdleMin').value = idleWarnMin;
+  document.getElementById('sCleanStart').checked = !!me.clean_start;
+  document.getElementById('sIdleTime').checked   = !!me.idle_time;
+  renderTaskTypeSettings();
   loadApiKeyStatus();
   renderFontPicker();
   renderChangelog();
@@ -3782,7 +4147,28 @@ function setupEventListeners() {
   document.getElementById('bulkCancelBtn').addEventListener('click', exitSelectionMode);
   document.getElementById('addTaskBtn').addEventListener('click', submitNewTask);
   document.getElementById('cancelNewTaskBtn').addEventListener('click', hideNewTask);
-  document.getElementById('newTaskInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitNewTask(); } });
+  const newTaskInput = document.getElementById('newTaskInput');
+  newTaskInput.addEventListener('input', () => {
+    clearTimeout(_suggestTimer);
+    const q = newTaskInput.value.trim();
+    if (q.length < 2) { hideTaskSuggest(); return; }
+    _suggestTimer = setTimeout(() => fetchTaskSuggestions(q), 150);
+  });
+  newTaskInput.addEventListener('keydown', e => {
+    const open = _suggestItems.length > 0;
+    if (e.key === 'ArrowDown' && open)      { e.preventDefault(); moveTaskSuggest(1); }
+    else if (e.key === 'ArrowUp' && open)   { e.preventDefault(); moveTaskSuggest(-1); }
+    else if (e.key === 'Escape' && open)    { e.stopPropagation(); hideTaskSuggest(); }  // first Esc closes the list only
+    else if (e.key === 'Tab' && open && _suggestIdx >= 0) { e.preventDefault(); pickTaskSuggestion(_suggestIdx); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (open && _suggestIdx >= 0) pickTaskSuggestion(_suggestIdx); else submitNewTask();
+    }
+  });
+  // Small delay so a tap on a suggestion registers; skip if the field was refocused meanwhile
+  newTaskInput.addEventListener('blur', () => setTimeout(() => {
+    if (document.activeElement !== newTaskInput) hideTaskSuggest();
+  }, 150));
   document.getElementById('resetYesBtn').addEventListener('click', doResetDay);
   document.getElementById('cancelResetBtn').addEventListener('click', hideResetConfirm);
   document.getElementById('endDayBtn').addEventListener('click', showEndDay);
@@ -3797,6 +4183,10 @@ function setupEventListeners() {
   // Settings
   document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
   document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
+  document.getElementById('sCleanStart').addEventListener('change', e => saveCleanStart(e.target.checked));
+  document.getElementById('sIdleTime').addEventListener('change', e => saveIdleTime(e.target.checked));
+  document.getElementById('addTaskTypeBtn').addEventListener('click', addTaskType);
+  document.getElementById('newTaskTypeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTaskType(); });
   document.getElementById('changePwdBtn').addEventListener('click', changePassword);
   document.getElementById('generateApiKeyBtn').addEventListener('click', generateApiKey);
   document.getElementById('revokeApiKeyBtn').addEventListener('click', revokeApiKey);
@@ -4011,7 +4401,7 @@ function setupEventListeners() {
         return;
       }
       const isRunning = !!liveTimers[selectedTaskId];
-      if (isRunning) stopTimer(selectedTaskId).then(() => renderTaskList());
+      if (isRunning) stopJob(selectedTaskId).then(() => renderTaskList());
       else           startTimer(selectedTaskId);
     }
 
@@ -4098,7 +4488,7 @@ function switchTab(name) {
 
 // ── MODALS ──
 function openModal(id)  { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
 
 // ── PAGE ──
 function showPage(id) {
@@ -4144,6 +4534,13 @@ function hm(s) {
   s = Math.max(0, Math.floor(s));
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
   return h === 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+// Exact duration to the second, for lists and reports: "1h 2m 37s", "25m 40s", "37s", "2h"
+function hmsText(s) {
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const parts = [h && `${h}h`, m && `${m}m`, sec && `${sec}s`].filter(Boolean);
+  return parts.length ? parts.join(' ') : '0s';
 }
 function pad(n) { return String(n).padStart(2,'0'); }
 function esc(s) {

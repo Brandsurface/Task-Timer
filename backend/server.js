@@ -92,6 +92,7 @@ app.get('/favicon.png',          serveIcon('favicon.png'));
 app.get('/icon-192.png',         serveIcon('icon-192.png'));
 app.get('/icon-512.png',         serveIcon('icon-512.png'));
 app.get('/apple-touch-icon.png', serveIcon('apple-touch-icon.png'));
+app.get('/logo.png',             serveIcon('logo.png'));
 
 // Web App Manifest — enables "Add to Home Screen" on mobile
 app.get('/manifest.json', (req, res) => {
@@ -167,6 +168,11 @@ function todayDK() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
 }
 
+// Calendar day (Copenhagen) of a SQLite UTC timestamp like '2026-10-21 12:25:10'
+function dkDateOf(sqliteUtc) {
+  return new Date(sqliteUtc.replace(' ', 'T') + 'Z').toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+}
+
 function timeToSeconds(start, end) {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
@@ -200,7 +206,7 @@ app.post('/api/auth/register', (req, res) => {
       'INSERT INTO users (email, name, password, role) VALUES (?, ?, ?, ?)'
     ).run(email.toLowerCase().trim(), name.trim(), hash, role);
 
-    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(result.lastInsertRowid);
     try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user });
@@ -324,14 +330,14 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 app.get('/api/auth/me', auth, (req, res) => {
-  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
   res.json(user);
 });
 
 app.patch('/api/auth/me', auth, (req, res) => {
-  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences } = req.body;
+  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences, clean_start, idle_time } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -356,6 +362,14 @@ app.patch('/api/auth/me', auth, (req, res) => {
     updates.password = bcrypt.hashSync(new_password, 10);
   }
 
+  if (idle_time !== undefined) updates.idle_time = idle_time ? 1 : 0;
+
+  if (clean_start !== undefined) {
+    updates.clean_start = clean_start ? 1 : 0;
+    // Switching it on mid-day must not wipe today's list — the first clean is tomorrow
+    if (clean_start && !user.clean_start) updates.clean_start_date = todayDK();
+  }
+
   if (preferences !== undefined) {
     if (typeof preferences !== 'object' || preferences === null)
       return res.status(400).json({ error: 'Invalid preferences' });
@@ -366,8 +380,9 @@ app.patch('/api/auth/me', auth, (req, res) => {
 
   const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   db.prepare(`UPDATE users SET ${sets} WHERE id = ?`).run(...Object.values(updates), req.user.id);
+  if (updates.idle_time) ensureIdleTask(req.user.id);   // switched on: the card exists right away
 
-  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(req.user.id);
+  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(req.user.id);
   try { updated.preferences = updated.preferences ? JSON.parse(updated.preferences) : null; } catch { updated.preferences = null; }
   res.json(updated);
 });
@@ -387,6 +402,75 @@ app.get('/api/tasks', auth, (req, res) => {
     ORDER BY t.sort_order ASC, t.created_at ASC
   `).all(req.user.id);
   res.json(tasks);
+});
+
+// ── IDLE TIME ──
+// Optional per-user setting. When the user stops a job, the app starts a timer on
+// a special "Idle Time" task, so the time until the next job is registered too.
+// The task is an ordinary card (own timer, own rows in Week view) with is_idle = 1.
+// It is pinned so Select/bulk delete and Clean start leave it alone, and it is kept
+// out of the goal percentages, the PDF/CSV exports and the name suggestions.
+const IDLE_TASK_NAME = 'Idle Time';
+
+function ensureIdleTask(userId) {
+  let task = db.prepare('SELECT * FROM tasks WHERE user_id = ? AND is_idle = 1 ORDER BY archived ASC, id ASC LIMIT 1').get(userId);
+  if (task) {
+    // The user deleted (archived) it — bring it back with its history
+    if (task.archived) db.prepare('UPDATE tasks SET archived = 0, pinned = 1 WHERE id = ?').run(task.id);
+    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(task.id);
+  }
+  // Adopt a task the user already created with that name instead of making a duplicate
+  const same = db.prepare('SELECT id FROM tasks WHERE user_id = ? AND archived = 0 AND LOWER(name) = LOWER(?)').get(userId, IDLE_TASK_NAME);
+  if (same) {
+    db.prepare('UPDATE tasks SET is_idle = 1, pinned = 1 WHERE id = ?').run(same.id);
+    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(same.id);
+  }
+  const maxOrder = db.prepare('SELECT MAX(sort_order) AS m FROM tasks WHERE user_id = ?').get(userId);
+  const result = db.prepare(
+    'INSERT INTO tasks (user_id, name, color, sort_order, pinned, is_idle) VALUES (?, ?, ?, ?, 1, 1)'
+  ).run(userId, IDLE_TASK_NAME, '#8a8f98', (maxOrder.m ?? 0) + 1);
+  return db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
+}
+
+app.post('/api/idle-task', auth, (req, res) => {
+  const user = db.prepare('SELECT idle_time FROM users WHERE id = ?').get(req.user.id);
+  if (!user.idle_time) return res.status(409).json({ error: 'Idle Time is switched off in Settings' });
+  res.json(ensureIdleTask(req.user.id));
+});
+
+// Name suggestions for the "New task" input. Searches every task the user has
+// ever saved — deleted (archived) ones included, so old jobs can be reused —
+// and returns distinct names, best match first. Filtering happens in JS because
+// SQLite's LIKE only ignores case for ASCII (æ/ø/å would not match Æ/Ø/Å).
+const SUGGEST_LIMIT = 8;
+
+app.get('/api/tasks/suggest', auth, (req, res) => {
+  const q = String(req.query.q ?? '').trim().slice(0, 80).toLowerCase();
+  if (q.length < 2) return res.json([]);
+  const tokens = q.split(/\s+/).slice(0, 6);
+
+  // Most recently worked-on jobs first (latest logged day, else creation date)
+  const rows = db.prepare(`
+    SELECT t.name, t.archived
+    FROM tasks t
+    LEFT JOIN (
+      SELECT task_id, MAX(date) AS d FROM time_entries WHERE user_id = ? GROUP BY task_id
+    ) l ON l.task_id = t.id
+    WHERE t.user_id = ? AND t.is_idle = 0
+    ORDER BY COALESCE(l.d, substr(t.created_at, 1, 10)) DESC, t.id DESC
+  `).all(req.user.id, req.user.id);
+
+  const found = new Map(); // lower-cased name -> suggestion
+  for (const r of rows) {
+    const key = r.name.toLowerCase();
+    if (!tokens.every(tok => key.includes(tok))) continue;
+    const hit = found.get(key);
+    if (hit) hit.active = hit.active || !r.archived;
+    else found.set(key, { name: r.name, active: !r.archived, starts: key.startsWith(q) });
+  }
+  // Names that start with what was typed first; otherwise keep the recency order
+  const sorted = [...found.values()].sort((a, b) => b.starts - a.starts);
+  res.json(sorted.slice(0, SUGGEST_LIMIT).map(({ name, active }) => ({ name, active })));
 });
 
 // Case-insensitive duplicate check among the user's active (non-archived)
@@ -421,7 +505,7 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const { name, color, sort_order, budget_seconds, pinned } = req.body;
+  const { name, color, sort_order, budget_seconds, pinned, task_type_id } = req.body;
   const updates = {};
   if (name !== undefined) {
     const trimmed = name.trim();
@@ -434,6 +518,14 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   if (sort_order     !== undefined) updates.sort_order     = sort_order;
   if (budget_seconds !== undefined) updates.budget_seconds = Math.max(0, parseInt(budget_seconds) || 0);
   if (pinned         !== undefined) updates.pinned         = pinned ? 1 : 0;
+  if (task_type_id   !== undefined) {
+    if (task_type_id === null) updates.task_type_id = null;
+    else {
+      const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(task_type_id, req.user.id);
+      if (!type) return res.status(400).json({ error: 'Unknown task type' });
+      updates.task_type_id = type.id;
+    }
+  }
 
   // If nothing changed, return current task as-is (idempotent)
   if (Object.keys(updates).length === 0) {
@@ -443,6 +535,38 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   db.prepare(`UPDATE tasks SET ${sets} WHERE id = ?`).run(...Object.values(updates), task.id);
   res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(task.id));
+});
+
+// Clean start — optional per-user setting. The first time the app is opened on
+// a new day, active tasks that are not pinned (starred) are archived, so the
+// timer starts the day empty. Archiving keeps the history in Week view.
+// Left alone: pinned tasks, tasks created or used today, tasks with a running
+// timer (keep[]) and tasks the Chrome extension is about to start.
+// The day is stored per user, so a second device on the same day does nothing.
+app.post('/api/tasks/clean-start', auth, (req, res) => {
+  const today = todayDK();
+  const user = db.prepare('SELECT clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
+  if (!user.clean_start || (user.clean_start_date && user.clean_start_date >= today)) {
+    return res.json({ date: today, cleared: 0, ids: [] });
+  }
+
+  const keep = new Set((Array.isArray(req.body.keep) ? req.body.keep : []).map(Number));
+  const usedToday = new Set(
+    db.prepare('SELECT DISTINCT task_id FROM time_entries WHERE user_id = ? AND date >= ?')
+      .all(req.user.id, today).map(r => r.task_id)
+  );
+  const ids = db.prepare(
+    'SELECT id, created_at FROM tasks WHERE user_id = ? AND archived = 0 AND pinned = 0 AND pending_start = 0 AND is_idle = 0'
+  ).all(req.user.id)
+    .filter(t => !keep.has(t.id) && !usedToday.has(t.id) && dkDateOf(t.created_at) < today)
+    .map(t => t.id);
+
+  db.transaction(() => {
+    const archive = db.prepare('UPDATE tasks SET archived = 1 WHERE id = ?');
+    ids.forEach(id => archive.run(id));
+    db.prepare('UPDATE users SET clean_start_date = ? WHERE id = ?').run(today, req.user.id);
+  })();
+  res.json({ date: today, cleared: ids.length, ids });
 });
 
 app.post('/api/tasks/reorder', auth, (req, res) => {
@@ -458,6 +582,65 @@ app.delete('/api/tasks/:id', auth, (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
   db.prepare('UPDATE tasks SET archived = 1 WHERE id = ?').run(task.id);
+  res.json({ ok: true });
+});
+
+// ─────────────────────────────────────────
+//  TASK TYPES
+// ─────────────────────────────────────────
+
+const TASK_TYPE_MAX_LEN = 40;
+
+function validTaskTypeName(raw) {
+  const name = typeof raw === 'string' ? raw.trim() : '';
+  if (!name) return { error: 'Type name required' };
+  if (name.length > TASK_TYPE_MAX_LEN) return { error: `Type name can be at most ${TASK_TYPE_MAX_LEN} characters` };
+  return { name };
+}
+
+function findDuplicateTaskType(userId, name, excludeId = null) {
+  return db.prepare(`
+    SELECT id, name FROM task_types
+    WHERE user_id = ? AND LOWER(name) = LOWER(?)
+    ${excludeId ? 'AND id != ?' : ''}
+  `).get(...[userId, name, ...(excludeId ? [excludeId] : [])]);
+}
+
+app.get('/api/task-types', auth, (req, res) => {
+  res.json(db.prepare(
+    'SELECT id, name, sort_order FROM task_types WHERE user_id = ? ORDER BY sort_order ASC, id ASC'
+  ).all(req.user.id));
+});
+
+app.post('/api/task-types', auth, (req, res) => {
+  const v = validTaskTypeName(req.body.name);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const dup = findDuplicateTaskType(req.user.id, v.name);
+  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+
+  const maxOrder = db.prepare('SELECT MAX(sort_order) AS m FROM task_types WHERE user_id = ?').get(req.user.id);
+  const result = db.prepare('INSERT INTO task_types (user_id, name, sort_order) VALUES (?, ?, ?)')
+    .run(req.user.id, v.name, (maxOrder.m ?? -1) + 1);
+  res.status(201).json(db.prepare('SELECT id, name, sort_order FROM task_types WHERE id = ?').get(result.lastInsertRowid));
+});
+
+app.patch('/api/task-types/:id', auth, (req, res) => {
+  const type = db.prepare('SELECT * FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!type) return res.status(404).json({ error: 'Type not found' });
+
+  const v = validTaskTypeName(req.body.name);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const dup = findDuplicateTaskType(req.user.id, v.name, type.id);
+  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+
+  db.prepare('UPDATE task_types SET name = ? WHERE id = ?').run(v.name, type.id);
+  res.json(db.prepare('SELECT id, name, sort_order FROM task_types WHERE id = ?').get(type.id));
+});
+
+app.delete('/api/task-types/:id', auth, (req, res) => {
+  const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!type) return res.status(404).json({ error: 'Type not found' });
+  db.prepare('DELETE FROM task_types WHERE id = ?').run(type.id); // tasks keep existing, type cleared via FK
   res.json({ ok: true });
 });
 
@@ -481,10 +664,10 @@ app.get('/api/entries/week-total', auth, (req, res) => {
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).json({ error: 'from and to required' });
   const row = db.prepare(`
-    SELECT COALESCE(SUM(seconds), 0) as total_seconds
-    FROM time_entries
-    WHERE user_id = ? AND date >= ? AND date <= ?
-  `).get(req.user.id, from, to);
+    SELECT COALESCE(SUM(e.seconds), 0) as total_seconds
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ? AND t.is_idle = 0 AND e.date >= ? AND e.date <= ?
+  `).get(req.user.id, from, to);   // goal progress counts work only — not Idle Time
   res.json(row);
 });
 
@@ -523,7 +706,7 @@ app.get('/api/export', auth, (req, res) => {
            SUM(e.seconds) as total_seconds
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
@@ -603,7 +786,7 @@ app.get('/api/export/csv', auth, (req, res) => {
            GROUP_CONCAT(NULLIF(e.note, ''), ' / ') AS notes
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
@@ -614,11 +797,12 @@ app.get('/api/export/csv', auth, (req, res) => {
     const s = String(v ?? '');
     return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}`;
-  const decimalHours = sec => (sec / 3600).toFixed(2).replace('.', ',');
+  // Exact to the second — no rounding to minutes
+  const hhmm = sec => `${Math.floor(sec / 3600)}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+  const decimalHours = sec => (sec / 3600).toFixed(4).replace('.', ',');
 
   let total = 0;
-  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm)', 'Timer (decimal)'].join(';')];
+  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm:ss)', 'Timer (decimal)'].join(';')];
   for (const r of rows) {
     total += r.total_seconds;
     const jobMatch = r.task_name.match(/^(\d{6})/);
@@ -652,16 +836,29 @@ app.get('/api/entries', auth, (req, res) => {
   res.json(entries);
 });
 
+// A single registration can be at most this long (guards against garbage input)
+const MAX_ENTRY_SECONDS = 31 * 86400;
+
 app.post('/api/entries', auth, (req, res) => {
-  const { task_id, date, start_time, end_time, note, committed } = req.body;
+  const { task_id, date, start_time, end_time, note, committed, seconds: exactSeconds } = req.body;
   if (!task_id || !date || !start_time || !end_time)
     return res.status(400).json({ error: 'Missing fields: task_id, date, start_time, end_time' });
 
   const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND user_id = ?').get(task_id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const seconds = timeToSeconds(start_time, end_time);
-  if (seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
+  // start_time/end_time only hold hours and minutes. The timer therefore sends the
+  // exact elapsed seconds, which are stored as-is — never rounded to the minute.
+  // Manually typed entries (HH:MM only) are still calculated from the two times.
+  let seconds;
+  if (exactSeconds !== undefined) {
+    seconds = exactSeconds;
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > MAX_ENTRY_SECONDS)
+      return res.status(400).json({ error: 'Invalid seconds value' });
+  } else {
+    seconds = timeToSeconds(start_time, end_time);
+    if (seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
+  }
 
   const result = db.prepare(`
     INSERT INTO time_entries (user_id, task_id, date, start_time, end_time, seconds, note, committed)
@@ -747,15 +944,19 @@ app.patch('/api/entries/:id', auth, (req, res) => {
     updates.task_id = task_id;
   }
 
-  // Allow direct seconds override (for edit-time dialog on active tasks)
-  if (seconds !== undefined && !updates.start_time && !updates.end_time) {
+  // Seconds are only recalculated (to the minute, from the typed times) when the
+  // start or end time actually changed. Editing just the note or the task keeps
+  // the exact registered seconds — the edit dialog always sends the unchanged times.
+  const timesChanged = (updates.start_time ?? entry.start_time) !== entry.start_time
+                    || (updates.end_time   ?? entry.end_time)   !== entry.end_time;
+
+  if (seconds !== undefined && !timesChanged) {
+    // Direct seconds override (for edit-time dialog on active tasks)
     const s = parseInt(seconds);
     if (isNaN(s) || s < 0) return res.status(400).json({ error: 'Invalid seconds value' });
     updates.seconds = s;
-  } else {
-    const newStart  = updates.start_time || entry.start_time;
-    const newEnd    = updates.end_time   || entry.end_time;
-    updates.seconds = timeToSeconds(newStart, newEnd);
+  } else if (timesChanged) {
+    updates.seconds = timeToSeconds(updates.start_time ?? entry.start_time, updates.end_time ?? entry.end_time);
     if (updates.seconds <= 0) return res.status(400).json({ error: 'End time must be after start time' });
   }
 
@@ -1131,7 +1332,7 @@ app.get('/api/extension/pending', auth, (req, res) => {
 app.get('/api/extension/tasks', authOrApiKey, (req, res) => {
   const tasks = db.prepare(`
     SELECT id, name, color FROM tasks
-    WHERE user_id = ? AND archived = 0
+    WHERE user_id = ? AND archived = 0 AND is_idle = 0
     ORDER BY sort_order ASC, created_at ASC
   `).all(req.user.id);
   res.json(tasks);
