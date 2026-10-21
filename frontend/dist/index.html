@@ -1446,8 +1446,22 @@ const API = window.location.protocol === 'file:'
 
 // ── VERSION & CHANGELOG ──
 // Newest release first. Shown under Settings → What's new.
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const CHANGELOG = [
+  {
+    version: '1.2.0',
+    date: '2026-10-21',
+    items: [
+      'Idle Time: an optional setting registers the time between jobs on an "Idle Time" card (Settings → Idle Time)',
+      'The running task card moves to the top of the list and slides into place',
+      'Time is registered exactly to the second and never rounded to whole minutes; End day, Week view and the PDF report show seconds, and the CSV time column is t:mm:ss',
+      'Task types: pick a type such as Design or 3D render on each card, and manage the list in Settings → Task types',
+      'Name suggestions while creating a new task, based on the jobs you have saved before',
+      'Clean start: an optional setting clears the cards that are not starred at the start of each new day (Settings → Start of day)',
+      'Smaller card buttons, and the new TASK TIMER logo on the login screen',
+      'Fix: Esc now closes the New task form',
+    ],
+  },
   {
     version: '1.1.0',
     date: '2026-07-11',

@@ -1,6 +1,6 @@
 # TaskTimer — Installations- og opsætningsvejledning
 
-**Aktuel version: 1.1.0** — se ændringer under [Versionshistorik](#versionshistorik)
+**Aktuel version: 1.2.0** — se ændringer under [Versionshistorik](#versionshistorik)
 nederst, eller i appen under **Settings → What's new**.
 
 ## Indhold
@@ -207,6 +207,19 @@ ports:
 ---
 
 ## Versionshistorik
+
+### 1.2.0 — 21. oktober 2026
+- Idle Time (valgfrit): tiden mellem to jobs registreres automatisk på et "Idle Time"-kort
+- Det kørende kort glider op øverst på listen
+- Tid registreres på sekundet og afrundes aldrig; End day, Week og PDF viser sekunder,
+  og CSV har tid som t:mm:ss og decimaltimer med 4 decimaler
+- Opgavetyper: vælg en type (fx Design, 3D render) på hvert kort; listen styres i Settings
+- Forslag til jobnavne når der oprettes et nyt job, baseret på tidligere gemte jobs
+- Ren start på dagen (valgfrit): kort der ikke er stjernemarkeret ryddes hver ny dag
+- Mindre knapper på opgavekortene og nyt TASK TIMER-logo på login-skærmen
+- Rettelse: Esc lukker nu "New task"-formularen
+- Opgradering: databasen udvides automatisk ved opstart (nye tabeller/kolonner), og
+  `Dockerfile`/`docker-compose.yml` er uændrede
 
 ### 1.1.0 — 11. juli 2026
 - Kørende timer vises live i browserfanens titel (tid + jobnavn)
