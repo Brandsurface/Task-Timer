@@ -206,7 +206,7 @@ app.post('/api/auth/register', (req, res) => {
       'INSERT INTO users (email, name, password, role) VALUES (?, ?, ?, ?)'
     ).run(email.toLowerCase().trim(), name.trim(), hash, role);
 
-    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(result.lastInsertRowid);
     try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user });
@@ -330,14 +330,14 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 app.get('/api/auth/me', auth, (req, res) => {
-  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
   res.json(user);
 });
 
 app.patch('/api/auth/me', auth, (req, res) => {
-  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences, clean_start } = req.body;
+  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences, clean_start, idle_time } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -362,6 +362,8 @@ app.patch('/api/auth/me', auth, (req, res) => {
     updates.password = bcrypt.hashSync(new_password, 10);
   }
 
+  if (idle_time !== undefined) updates.idle_time = idle_time ? 1 : 0;
+
   if (clean_start !== undefined) {
     updates.clean_start = clean_start ? 1 : 0;
     // Switching it on mid-day must not wipe today's list — the first clean is tomorrow
@@ -378,8 +380,9 @@ app.patch('/api/auth/me', auth, (req, res) => {
 
   const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   db.prepare(`UPDATE users SET ${sets} WHERE id = ?`).run(...Object.values(updates), req.user.id);
+  if (updates.idle_time) ensureIdleTask(req.user.id);   // switched on: the card exists right away
 
-  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
+  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date, idle_time FROM users WHERE id = ?').get(req.user.id);
   try { updated.preferences = updated.preferences ? JSON.parse(updated.preferences) : null; } catch { updated.preferences = null; }
   res.json(updated);
 });
@@ -401,6 +404,40 @@ app.get('/api/tasks', auth, (req, res) => {
   res.json(tasks);
 });
 
+// ── IDLE TIME ──
+// Optional per-user setting. When the user stops a job, the app starts a timer on
+// a special "Idle Time" task, so the time until the next job is registered too.
+// The task is an ordinary card (own timer, own rows in Week view) with is_idle = 1.
+// It is pinned so Select/bulk delete and Clean start leave it alone, and it is kept
+// out of the goal percentages, the PDF/CSV exports and the name suggestions.
+const IDLE_TASK_NAME = 'Idle Time';
+
+function ensureIdleTask(userId) {
+  let task = db.prepare('SELECT * FROM tasks WHERE user_id = ? AND is_idle = 1 ORDER BY archived ASC, id ASC LIMIT 1').get(userId);
+  if (task) {
+    // The user deleted (archived) it — bring it back with its history
+    if (task.archived) db.prepare('UPDATE tasks SET archived = 0, pinned = 1 WHERE id = ?').run(task.id);
+    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(task.id);
+  }
+  // Adopt a task the user already created with that name instead of making a duplicate
+  const same = db.prepare('SELECT id FROM tasks WHERE user_id = ? AND archived = 0 AND LOWER(name) = LOWER(?)').get(userId, IDLE_TASK_NAME);
+  if (same) {
+    db.prepare('UPDATE tasks SET is_idle = 1, pinned = 1 WHERE id = ?').run(same.id);
+    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(same.id);
+  }
+  const maxOrder = db.prepare('SELECT MAX(sort_order) AS m FROM tasks WHERE user_id = ?').get(userId);
+  const result = db.prepare(
+    'INSERT INTO tasks (user_id, name, color, sort_order, pinned, is_idle) VALUES (?, ?, ?, ?, 1, 1)'
+  ).run(userId, IDLE_TASK_NAME, '#8a8f98', (maxOrder.m ?? 0) + 1);
+  return db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
+}
+
+app.post('/api/idle-task', auth, (req, res) => {
+  const user = db.prepare('SELECT idle_time FROM users WHERE id = ?').get(req.user.id);
+  if (!user.idle_time) return res.status(409).json({ error: 'Idle Time is switched off in Settings' });
+  res.json(ensureIdleTask(req.user.id));
+});
+
 // Name suggestions for the "New task" input. Searches every task the user has
 // ever saved — deleted (archived) ones included, so old jobs can be reused —
 // and returns distinct names, best match first. Filtering happens in JS because
@@ -419,7 +456,7 @@ app.get('/api/tasks/suggest', auth, (req, res) => {
     LEFT JOIN (
       SELECT task_id, MAX(date) AS d FROM time_entries WHERE user_id = ? GROUP BY task_id
     ) l ON l.task_id = t.id
-    WHERE t.user_id = ?
+    WHERE t.user_id = ? AND t.is_idle = 0
     ORDER BY COALESCE(l.d, substr(t.created_at, 1, 10)) DESC, t.id DESC
   `).all(req.user.id, req.user.id);
 
@@ -519,7 +556,7 @@ app.post('/api/tasks/clean-start', auth, (req, res) => {
       .all(req.user.id, today).map(r => r.task_id)
   );
   const ids = db.prepare(
-    'SELECT id, created_at FROM tasks WHERE user_id = ? AND archived = 0 AND pinned = 0 AND pending_start = 0'
+    'SELECT id, created_at FROM tasks WHERE user_id = ? AND archived = 0 AND pinned = 0 AND pending_start = 0 AND is_idle = 0'
   ).all(req.user.id)
     .filter(t => !keep.has(t.id) && !usedToday.has(t.id) && dkDateOf(t.created_at) < today)
     .map(t => t.id);
@@ -627,10 +664,10 @@ app.get('/api/entries/week-total', auth, (req, res) => {
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).json({ error: 'from and to required' });
   const row = db.prepare(`
-    SELECT COALESCE(SUM(seconds), 0) as total_seconds
-    FROM time_entries
-    WHERE user_id = ? AND date >= ? AND date <= ?
-  `).get(req.user.id, from, to);
+    SELECT COALESCE(SUM(e.seconds), 0) as total_seconds
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    WHERE e.user_id = ? AND t.is_idle = 0 AND e.date >= ? AND e.date <= ?
+  `).get(req.user.id, from, to);   // goal progress counts work only — not Idle Time
   res.json(row);
 });
 
@@ -669,7 +706,7 @@ app.get('/api/export', auth, (req, res) => {
            SUM(e.seconds) as total_seconds
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
@@ -749,7 +786,7 @@ app.get('/api/export/csv', auth, (req, res) => {
            GROUP_CONCAT(NULLIF(e.note, ''), ' / ') AS notes
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
@@ -1295,7 +1332,7 @@ app.get('/api/extension/pending', auth, (req, res) => {
 app.get('/api/extension/tasks', authOrApiKey, (req, res) => {
   const tasks = db.prepare(`
     SELECT id, name, color FROM tasks
-    WHERE user_id = ? AND archived = 0
+    WHERE user_id = ? AND archived = 0 AND is_idle = 0
     ORDER BY sort_order ASC, created_at ASC
   `).all(req.user.id);
   res.json(tasks);

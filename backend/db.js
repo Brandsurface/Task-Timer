@@ -76,6 +76,10 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_task_types_user ON task_types(user_id);
 `);
+// The automatic "Idle Time" task (see ensureIdleTask in server.js)
+if (!taskCols.includes('is_idle')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN is_idle INTEGER NOT NULL DEFAULT 0');
+}
 if (!taskCols.includes('task_type_id')) {
   db.exec('ALTER TABLE tasks ADD COLUMN task_type_id INTEGER REFERENCES task_types(id) ON DELETE SET NULL');
 }
@@ -96,6 +100,10 @@ if (!userCols.includes('api_key')) {
 }
 // "Clean start" setting: archive unstarred tasks on the first visit of a new day.
 // clean_start_date = the day it last ran (or was switched on).
+// "Idle Time" setting: register the time between jobs automatically.
+if (!userCols.includes('idle_time')) {
+  db.exec('ALTER TABLE users ADD COLUMN idle_time INTEGER NOT NULL DEFAULT 0');
+}
 if (!userCols.includes('clean_start')) {
   db.exec('ALTER TABLE users ADD COLUMN clean_start INTEGER NOT NULL DEFAULT 0');
   db.exec('ALTER TABLE users ADD COLUMN clean_start_date TEXT');

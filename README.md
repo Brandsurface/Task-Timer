@@ -171,6 +171,11 @@ ports:
   vises live i browserfanens titel. Tiden registreres på sekundet og afrundes aldrig
   (hverken op eller ned) — hverken når timeren stoppes, ved redigering, i listerne eller
   i eksporten. Registreringer under 10 sekunder ignoreres dog (utilsigtede klik)
+- **Idle Time** — valgfrit under Settings → Idle Time. Når du selv stopper et job, starter
+  appen et "Idle Time"-kort, så tiden indtil næste job også registreres. Næste job afslutter
+  det, og det kører aldrig forbi auto-stop-tidspunktet (heller ikke natten over). Idle Time
+  tæller ikke med i dag-/ugemål eller i PDF/CSV-eksport, men vises i Week. Pause selve
+  Idle Time-kortet for at stoppe registreringen
 - **Aktivt kort øverst** — kortet med den kørende timer glider op øverst på listen, og de
   andre kort gør plads. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
   tilbage til sin plads. Det kørende kort kan ikke trækkes rundt. Respekterer
@@ -195,7 +200,7 @@ ports:
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
 - **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
-  ren dagsstart, opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+  ren dagsstart, Idle Time, opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
 - **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
   da de er dokumenter til kunder/bogholderi)
 

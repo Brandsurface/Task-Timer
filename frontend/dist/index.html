@@ -972,6 +972,17 @@ body.has-bg-image #bgDotOverlay { display: block; }
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">Idle Time</div>
+        <div class="settings-body">
+          <label class="remember-row">
+            <input type="checkbox" id="sIdleTime" class="remember-checkbox" />
+            <span class="remember-track"><span class="remember-thumb"></span></span>
+            <span class="remember-label">Register idle time automatically</span>
+          </label>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">When you stop a job, the time until you start the next one is registered on an "Idle Time" card. Starting any job ends it, and it never runs past your auto-stop time. Idle Time is left out of your daily and weekly goals and out of PDF/CSV exports. Pause the Idle Time card itself to stop registering.</div>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-title">Task types</div>
         <div class="settings-body">
           <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a dropdown on every task card, e.g. Design, HTML programming or 3D render. Edit a name to rename it.</div>
@@ -1668,6 +1679,7 @@ async function refreshFromServer() {
     await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
+    await capStaleIdleTimer();
     await maybeCleanStart();
     
     renderTaskList();
@@ -2226,6 +2238,7 @@ async function init() {
     await fetchWeekTotal();
     restoreTimers(); // ← restore running timers from localStorage
     await syncOutbox(); // ← sync any pending offline entries + tasks
+    await capStaleIdleTimer();
     await maybeCleanStart();
 
     showPage('appPage');
@@ -2364,6 +2377,7 @@ async function afterAuth(res) {
   await loadTasks(); await loadTaskTypes(); await loadTodayEntries(); await fetchWeekTotal();
   restoreTimers();
   await syncOutbox();
+  await capStaleIdleTimer();
   await maybeCleanStart();
   
   showPage('appPage'); renderTaskList(); scheduleAutoStop(); startTicker();
@@ -2420,7 +2434,7 @@ function hideTaskSuggest() {
 // Offline / server unreachable: search the tasks already loaded in the app
 function localTaskSuggestions(q) {
   const tokens = q.toLowerCase().split(/\s+/);
-  return tasks.filter(t => tokens.every(k => t.name.toLowerCase().includes(k)))
+  return tasks.filter(t => !t.is_idle && tokens.every(k => t.name.toLowerCase().includes(k)))
     .slice(0, 8).map(t => ({ name: t.name, active: true }));
 }
 
@@ -2588,13 +2602,13 @@ async function reorderTasks(fromId, toId) {
 }
 
 // ── TIMER ENGINE ──
-async function startTimer(taskId) {
+async function startTimer(taskId, silent = false) {
   const running = Object.keys(liveTimers).map(Number).filter(id => id !== taskId);
   if (running.length > 0) await Promise.all(running.map(id => stopTimer(id)));
   if (liveTimers[taskId]) return;
   liveTimers[taskId] = { startedAt: new Date() };
   persistTimers();
-  pingStart();
+  if (!silent) pingStart();
   renderTaskList();
   updateTabTitle();
   // Brief pop animation on the card
@@ -2724,7 +2738,7 @@ document.addEventListener('visibilitychange', () => {
     _hiddenAt = null;
     maybeOfferIdleSubtract(away);
     // A tab left open overnight counts as a new day when you come back to it
-    maybeCleanStart().then(cleared => { if (cleared) renderTaskList(); });
+    (async () => { await capStaleIdleTimer(); if (await maybeCleanStart()) renderTaskList(); })();
   }
 });
 
@@ -2742,6 +2756,7 @@ function maybeOfferIdleSubtract(awayMs) {
   if (idleWarnMin <= 0 || awayMs < idleWarnMin * 60000) return;
   const runningId = Object.keys(liveTimers).map(Number)[0];
   if (runningId === undefined) return;
+  if (tasks.find(t => t.id === runningId)?.is_idle) return;   // Idle Time is the away time
   const leftAt = new Date(Date.now() - awayMs);
   // Timer started while away (e.g. via Chrome extension) — nothing to subtract
   if (liveTimers[runningId].startedAt >= leftAt) return;
@@ -2898,7 +2913,7 @@ function renderTaskList() {
       card.querySelector('.task-time').addEventListener('dblclick', () => openEditTime(task.id));
       card.querySelector('.ctrl.pp').addEventListener('click', () => {
         selectTask(task.id);
-        if (isRunning) stopTimer(task.id).then(() => renderTaskList());
+        if (isRunning) stopJob(task.id).then(() => renderTaskList());
         else           startTimer(task.id);
       });
       card.querySelector('.ctrl.copy-btn').addEventListener('click', () => {
@@ -2926,6 +2941,58 @@ function renderTaskList() {
   _renderedRunning = runningNow;
   slideCards(el, tops);
   renderBottomStats();
+}
+
+// ── IDLE TIME ──
+// Optional setting: when you stop a job yourself, the app starts the "Idle Time" card,
+// so the time until your next job is registered too. It is a normal timer: starting any
+// job stops it again (one timer at a time), and it ends at your auto-stop time.
+function idleTask() { return tasks.find(t => t.is_idle); }
+
+// "Stop" pressed on a card or Space: stop the job, then let idle time take over
+async function stopJob(taskId) {
+  await stopTimer(taskId);
+  await startIdleTimer(taskId);
+}
+
+async function startIdleTimer(stoppedId) {
+  if (!me?.idle_time) return;
+  if (tasks.find(t => t.id === stoppedId)?.is_idle) return;   // pausing Idle Time itself is deliberate
+  if (Object.keys(liveTimers).length) return;                  // another timer is already running
+  if (new Date() >= autoStopToday(new Date())) return;         // the workday is over
+  let idle = idleTask();
+  if (!idle) {
+    if (!navigator.onLine) return;
+    try { idle = await apiFetch('/idle-task', { method: 'POST' }); tasks.push(idle); }
+    catch { return; }
+  }
+  await startTimer(idle.id, true);   // silent: no start beep right after the stop beep
+}
+
+// The auto-stop moment on the same calendar day as `d`
+function autoStopToday(d) {
+  const t = new Date(d);
+  t.setHours(me?.day_end_hour ?? 17, me?.day_end_minute ?? 0, 0, 0);
+  return t;
+}
+
+// Idle time must not run through the night: an Idle Time timer left over from an earlier
+// session (browser closed, laptop asleep) is ended at the auto-stop time of the day it began.
+async function capStaleIdleTimer() {
+  const idle = idleTask(), lt = idle && liveTimers[idle.id];
+  if (!lt) return;
+  const cap = autoStopToday(lt.startedAt);
+  if (new Date() >= cap) await stopTimer(idle.id, false, cap);
+}
+
+async function saveIdleTime(enabled) {
+  const box = document.getElementById('sIdleTime');
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { idle_time: enabled } });
+    me.idle_time = updated.idle_time; cacheSet('tt_me', me);
+    if (enabled) { await loadTasks(); renderTaskList(); }   // the Idle Time card exists now
+    toast(enabled ? 'Idle Time on' : 'Idle Time off', 'ok');
+  } catch (e) { box.checked = !enabled; toast(e.message, 'err'); }
 }
 
 // ── CLEAN START ──
@@ -3194,15 +3261,16 @@ function totalSecForBudget(task) {
 }
 
 function renderBottomStats() {
-  let totalSec = 0;
-  tasks.forEach(t => { totalSec += liveSec(t.id); });
+  // Total shows everything registered today; goals count work only, not Idle Time
+  let totalSec = 0, workSec = 0;
+  tasks.forEach(t => { const s = liveSec(t.id); totalSec += s; if (!t.is_idle) workSec += s; });
   document.getElementById('totalToday').textContent = hms(totalSec);
-  document.getElementById('taskCount').textContent  = tasks.length;
-  const dg = dayGoalH * 3600, dp = dg > 0 ? Math.min(100, Math.round(totalSec / dg * 100)) : 0;
+  document.getElementById('taskCount').textContent  = tasks.filter(t => !t.is_idle).length;
+  const dg = dayGoalH * 3600, dp = dg > 0 ? Math.min(100, Math.round(workSec / dg * 100)) : 0;
   const dpEl = document.getElementById('dayPct');
   dpEl.textContent = dg > 0 ? `${dp}%` : '—';
   dpEl.className = 'goal-pill-value' + (dp >= 100 ? ' at-goal' : '');
-  const wSec = (weekSecCache ? weekSecCache.seconds : 0) + totalSec;
+  const wSec = (weekSecCache ? weekSecCache.seconds : 0) + workSec;
   const wg = weekGoalH * 3600, wp = wg > 0 ? Math.min(100, Math.round(wSec / wg * 100)) : 0;
   const wpEl = document.getElementById('weekPct');
   wpEl.textContent = wg > 0 ? `${wp}%` : '—';
@@ -3841,6 +3909,7 @@ function loadSettingsForm() {
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
   document.getElementById('sIdleMin').value = idleWarnMin;
   document.getElementById('sCleanStart').checked = !!me.clean_start;
+  document.getElementById('sIdleTime').checked   = !!me.idle_time;
   renderTaskTypeSettings();
   loadApiKeyStatus();
   renderFontPicker();
@@ -4115,6 +4184,7 @@ function setupEventListeners() {
   document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
   document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
   document.getElementById('sCleanStart').addEventListener('change', e => saveCleanStart(e.target.checked));
+  document.getElementById('sIdleTime').addEventListener('change', e => saveIdleTime(e.target.checked));
   document.getElementById('addTaskTypeBtn').addEventListener('click', addTaskType);
   document.getElementById('newTaskTypeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTaskType(); });
   document.getElementById('changePwdBtn').addEventListener('click', changePassword);
@@ -4331,7 +4401,7 @@ function setupEventListeners() {
         return;
       }
       const isRunning = !!liveTimers[selectedTaskId];
-      if (isRunning) stopTimer(selectedTaskId).then(() => renderTaskList());
+      if (isRunning) stopJob(selectedTaskId).then(() => renderTaskList());
       else           startTimer(selectedTaskId);
     }
 
