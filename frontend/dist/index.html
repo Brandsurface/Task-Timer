@@ -317,6 +317,7 @@ body::after {
 .task-card-top { display: flex; align-items: center; gap: 10px; }
 .drag-handle { color: var(--text-muted); cursor: grab; font-size: 12px; padding: 2px 0; line-height: 1; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
 .task-card:hover .drag-handle { opacity: 1; }
+.task-card.active-task .drag-handle { visibility: hidden; }
 .drag-handle:active { cursor: grabbing; }
 .task-info { flex: 1; min-width: 0; }
 .task-name { font-size: 12px; font-weight: 400; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; line-height: 1.3; letter-spacing: 0.01em; }
@@ -2784,8 +2785,35 @@ function budgetColor(pct) {
   return 'var(--red)';
 }
 
+// ── CARD SLIDE ANIMATION (FLIP) ──
+// renderTaskList rebuilds every card. So that a card glides to its new place instead of
+// jumping, note where each card was, rebuild, then animate from the old position.
+let _renderedRunning = '';   // ids of the running timers at the last render
+
+function cardTops(list) {
+  const tops = new Map();
+  list.querySelectorAll('.task-card').forEach(c => tops.set(c.dataset.id, c.getBoundingClientRect().top));
+  return tops;
+}
+
+function slideCards(list, tops) {
+  if (!tops.size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  list.querySelectorAll('.task-card').forEach(card => {
+    const was = tops.get(card.dataset.id);
+    if (was === undefined) return;                       // brand-new card — it fades in on its own
+    const delta = was - card.getBoundingClientRect().top;
+    if (Math.abs(delta) < 1) return;                     // didn't move
+    card.style.zIndex = card.classList.contains('active-task') ? 2 : 1;   // running card glides over the others
+    card.animate(
+      [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+      { duration: 400, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', composite: 'add' }
+    ).onfinish = () => { card.style.zIndex = ''; };
+  });
+}
+
 function renderTaskList() {
   const el = document.getElementById('taskList');
+  const tops = cardTops(el);   // card positions before this re-render
   if (!tasks.length) {
     el.innerHTML = `<div class="empty-state">No tasks yet<br>
       <span style="font-size:11px;color:var(--text-muted)">Create your first task with ＋ New task</span></div>`;
@@ -2793,9 +2821,10 @@ function renderTaskList() {
   }
   el.innerHTML = '';
   // Tasks arrive from the API already sorted by the user's chosen order
-  // (sort_order ASC). We render them as-is — no auto-hopping of running
-  // timers — so the order only changes when the user reorders or adds a task.
-  const sorted = tasks;
+  // (sort_order ASC). The card with the running timer is shown first; every other
+  // card keeps the user's own order. The stored order is never touched, so when the
+  // timer stops the card slides back to its own place.
+  const sorted = [...tasks].sort((a, b) => !!liveTimers[b.id] - !!liveTimers[a.id]);
   sorted.forEach(task => {
     const isRunning = !!liveTimers[task.id];
     const sec = liveSec(task.id);
@@ -2806,7 +2835,7 @@ function renderTaskList() {
       + (selectionMode ? ' in-selection' : '')
       + (selectionMode && selectedTaskIds.has(task.id) ? ' bulk-selected' : '')
       + (selectionMode && task.pinned ? ' is-pinned' : '');
-    card.draggable = !selectionMode;
+    card.draggable = !selectionMode && !isRunning;   // the running card is pinned to the top, not sortable
     card.dataset.id = task.id;
 
     const pct = budget > 0 ? Math.min(100, (totalSecForBudget(task) / budget) * 100) : 0;
@@ -2863,7 +2892,7 @@ function renderTaskList() {
         typeSel.addEventListener('change', () => setTaskType(task.id, typeSel));
         // A draggable card swallows clicks on its form controls in some browsers
         typeSel.addEventListener('mouseenter', () => { card.draggable = false; });
-        typeSel.addEventListener('mouseleave', () => { card.draggable = true; });
+        typeSel.addEventListener('mouseleave', () => { card.draggable = !isRunning; });
       }
       card.querySelector('.task-name').addEventListener('dblclick', () => startEditTaskName(task.id));
       card.querySelector('.task-time').addEventListener('dblclick', () => openEditTime(task.id));
@@ -2880,16 +2909,22 @@ function renderTaskList() {
       card.querySelector('.ctrl.del').addEventListener('click', () => requestDeleteTask(task.id));
       card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', String(task.id)); setTimeout(() => card.classList.add('dragging'), 0); });
       card.addEventListener('dragend',   () => card.classList.remove('dragging'));
-      card.addEventListener('dragover',  e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragover',  e => { if (isRunning) return; e.preventDefault(); card.classList.add('drag-over'); });
       card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
       card.addEventListener('drop',      e => {
         e.preventDefault(); card.classList.remove('drag-over');
+        if (isRunning) return;
         const fId = parseInt(e.dataTransfer.getData('text/plain'));
         if (fId !== task.id) reorderTasks(fId, task.id);
       });
     }
     el.appendChild(card);
   });
+  // A timer that just started jumps to the top — scroll up so its card stays in view
+  const runningNow = tasks.filter(t => liveTimers[t.id]).map(t => t.id).join(',');
+  if (runningNow && runningNow !== _renderedRunning) el.scrollTop = 0;
+  _renderedRunning = runningNow;
+  slideCards(el, tops);
   renderBottomStats();
 }
 

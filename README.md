@@ -171,6 +171,10 @@ ports:
   vises live i browserfanens titel. Tiden registreres på sekundet og afrundes aldrig
   (hverken op eller ned) — hverken når timeren stoppes, ved redigering, i listerne eller
   i eksporten. Registreringer under 10 sekunder ignoreres dog (utilsigtede klik)
+- **Aktivt kort øverst** — kortet med den kørende timer glider op øverst på listen, og de
+  andre kort gør plads. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
+  tilbage til sin plads. Det kørende kort kan ikke trækkes rundt. Respekterer
+  "reducer bevægelse" i styresystemet
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
 - **Ren start på dagen** — valgfrit under Settings → Start of day. Første gang du åbner
   appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ via Select).
