@@ -64,6 +64,22 @@ if (!taskCols.includes('pinned')) {
   db.exec('ALTER TABLE tasks ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0');
 }
 
+// Task types: a per-user list (Design, 3D Render, …) managed in Settings and
+// picked from a dropdown on each task card. Deleting a type clears it from
+// the tasks that used it (ON DELETE SET NULL).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS task_types (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name       TEXT    NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_task_types_user ON task_types(user_id);
+`);
+if (!taskCols.includes('task_type_id')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN task_type_id INTEGER REFERENCES task_types(id) ON DELETE SET NULL');
+}
+
 const userCols = db.pragma('table_info(users)').map(c => c.name);
 if (!userCols.includes('reset_token')) {
   db.exec('ALTER TABLE users ADD COLUMN reset_token TEXT');

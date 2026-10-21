@@ -161,6 +161,9 @@ ports:
 - **Login / opret konto** — individuelle konti per bruger
 - **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop.
   Dubletnavne blokeres med en advarsel
+- **Opgavetyper** — vælg en type (fx Design, HTML-programmering, 3D render) fra en lille
+  dropdown på hvert opgavekort. Listen styrer du selv under Settings → Task types
+  (tilføj, omdøb, slet); dropdownen vises først, når der er oprettet mindst én type
 - **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
   vises live i browserfanens titel
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
@@ -177,7 +180,7 @@ ports:
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
 - **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
-  adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+  opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
 - **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
   da de er dokumenter til kunder/bogholderi)
 

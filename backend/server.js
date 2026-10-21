@@ -422,7 +422,7 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const { name, color, sort_order, budget_seconds, pinned } = req.body;
+  const { name, color, sort_order, budget_seconds, pinned, task_type_id } = req.body;
   const updates = {};
   if (name !== undefined) {
     const trimmed = name.trim();
@@ -435,6 +435,14 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   if (sort_order     !== undefined) updates.sort_order     = sort_order;
   if (budget_seconds !== undefined) updates.budget_seconds = Math.max(0, parseInt(budget_seconds) || 0);
   if (pinned         !== undefined) updates.pinned         = pinned ? 1 : 0;
+  if (task_type_id   !== undefined) {
+    if (task_type_id === null) updates.task_type_id = null;
+    else {
+      const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(task_type_id, req.user.id);
+      if (!type) return res.status(400).json({ error: 'Unknown task type' });
+      updates.task_type_id = type.id;
+    }
+  }
 
   // If nothing changed, return current task as-is (idempotent)
   if (Object.keys(updates).length === 0) {
@@ -459,6 +467,65 @@ app.delete('/api/tasks/:id', auth, (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
   db.prepare('UPDATE tasks SET archived = 1 WHERE id = ?').run(task.id);
+  res.json({ ok: true });
+});
+
+// ─────────────────────────────────────────
+//  TASK TYPES
+// ─────────────────────────────────────────
+
+const TASK_TYPE_MAX_LEN = 40;
+
+function validTaskTypeName(raw) {
+  const name = typeof raw === 'string' ? raw.trim() : '';
+  if (!name) return { error: 'Type name required' };
+  if (name.length > TASK_TYPE_MAX_LEN) return { error: `Type name can be at most ${TASK_TYPE_MAX_LEN} characters` };
+  return { name };
+}
+
+function findDuplicateTaskType(userId, name, excludeId = null) {
+  return db.prepare(`
+    SELECT id, name FROM task_types
+    WHERE user_id = ? AND LOWER(name) = LOWER(?)
+    ${excludeId ? 'AND id != ?' : ''}
+  `).get(...[userId, name, ...(excludeId ? [excludeId] : [])]);
+}
+
+app.get('/api/task-types', auth, (req, res) => {
+  res.json(db.prepare(
+    'SELECT id, name, sort_order FROM task_types WHERE user_id = ? ORDER BY sort_order ASC, id ASC'
+  ).all(req.user.id));
+});
+
+app.post('/api/task-types', auth, (req, res) => {
+  const v = validTaskTypeName(req.body.name);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const dup = findDuplicateTaskType(req.user.id, v.name);
+  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+
+  const maxOrder = db.prepare('SELECT MAX(sort_order) AS m FROM task_types WHERE user_id = ?').get(req.user.id);
+  const result = db.prepare('INSERT INTO task_types (user_id, name, sort_order) VALUES (?, ?, ?)')
+    .run(req.user.id, v.name, (maxOrder.m ?? -1) + 1);
+  res.status(201).json(db.prepare('SELECT id, name, sort_order FROM task_types WHERE id = ?').get(result.lastInsertRowid));
+});
+
+app.patch('/api/task-types/:id', auth, (req, res) => {
+  const type = db.prepare('SELECT * FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!type) return res.status(404).json({ error: 'Type not found' });
+
+  const v = validTaskTypeName(req.body.name);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const dup = findDuplicateTaskType(req.user.id, v.name, type.id);
+  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+
+  db.prepare('UPDATE task_types SET name = ? WHERE id = ?').run(v.name, type.id);
+  res.json(db.prepare('SELECT id, name, sort_order FROM task_types WHERE id = ?').get(type.id));
+});
+
+app.delete('/api/task-types/:id', auth, (req, res) => {
+  const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!type) return res.status(404).json({ error: 'Type not found' });
+  db.prepare('DELETE FROM task_types WHERE id = ?').run(type.id); // tasks keep existing, type cleared via FK
   res.json({ ok: true });
 });
 

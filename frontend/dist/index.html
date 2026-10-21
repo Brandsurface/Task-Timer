@@ -313,11 +313,16 @@ body::after {
 .pending-badge { display: inline-block; margin-left: 7px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange); background: var(--orange-dim); border: 1px solid rgba(240,124,40,0.35); border-radius: 4px; vertical-align: middle; }
 .task-name-edit { background: transparent; border: none; border-bottom: 1px solid var(--orange); outline: none; font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); width: 100%; padding: 0 0 1px; }
 .task-time { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--orange); margin-top: 1px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.03em; flex-wrap: wrap; }
+.task-sub { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
+.task-type-select { margin-left: auto; flex: 1 1 56px; min-width: 0; max-width: 130px; height: 18px; padding: 0 16px 0 6px; -webkit-appearance: none; appearance: none; background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%238a8f98' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 5px center; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-family: var(--sans); font-size: 10px; line-height: 16px; cursor: pointer; outline: none; text-overflow: ellipsis; transition: border-color 0.12s, color 0.12s; }
+.task-type-select.has-type { color: var(--text-dim); }
+.task-type-select:hover, .task-type-select:focus { border-color: var(--orange); color: var(--text); }
+.task-type-select option { background: var(--surface2); color: var(--text); }
 .task-budget-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); font-weight: 400; }
 .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: blink 3s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
 .task-controls { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
-.ctrl { width: 30px; height: 30px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
+.ctrl { width: 24px; height: 24px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
 .ctrl:active { transform: scale(0.88); }
 .ctrl:hover { border-color: var(--border2); color: var(--text); }
 .ctrl.pp { background: var(--surface3); color: var(--text); }
@@ -419,6 +424,10 @@ body::after {
 .settings-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px 8px; border-bottom: 1px solid var(--border); }
 .settings-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .settings-row { display: flex; gap: 10px; }
+.type-list { display: flex; flex-direction: column; gap: 6px; }
+.type-row { display: flex; align-items: center; gap: 8px; }
+.type-row .form-input { padding: 7px 10px; font-size: 13px; }
+.type-empty { font-size: 12px; color: var(--text-muted); }
 .color-input { width: 100%; height: 42px; border-radius: var(--r-sm); border: 1px solid var(--border); cursor: pointer; padding: 3px; background: var(--surface2); }
 .font-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 9px 12px; cursor: pointer; font-size: 14px; color: var(--text); transition: border-color 0.15s, background 0.15s; text-align: left; width: 100%; line-height: 1.3; }
 .font-btn.active { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
@@ -938,6 +947,17 @@ body.has-bg-image #bgDotOverlay { display: block; }
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">Task types</div>
+        <div class="settings-body">
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a dropdown on every task card, e.g. Design, HTML programming or 3D render. Edit a name to rename it.</div>
+          <div class="type-list" id="taskTypeList"></div>
+          <div class="settings-row" style="gap:8px">
+            <input class="form-input" id="newTaskTypeInput" type="text" maxlength="40" placeholder="New type, e.g. Design" style="flex:1;min-width:0" />
+            <button class="btn btn-primary btn-sm" id="addTaskTypeBtn"><span class="btn-text">Add</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-title">Change password</div>
         <div class="settings-body">
           <div class="form-field">
@@ -1417,6 +1437,7 @@ const CHANGELOG = [
 let token        = localStorage.getItem('tt_token') || null;
 let me           = null;
 let tasks        = [];
+let taskTypes    = [];
 let liveTimers   = {};
 let todayEntries = [];
 let weekOffset   = 0;
@@ -1595,6 +1616,7 @@ function bootOffline() {
   me = cacheGet('tt_me') || me || { name: '' };
   if (me && me.preferences) { applyGradient(me.preferences); applyBackground(me.preferences); applyFont(me.preferences); }
   tasks = cacheGet('tt_tasks') || [];
+  taskTypes = cacheGet('tt_taskTypes') || [];
   mergePendingTasks();
   todayEntries = cacheGet('tt_today_entries') || [];
   const wk = cacheGet('tt_week'); if (wk) weekSecCache = wk;
@@ -1618,6 +1640,7 @@ async function refreshFromServer() {
     setOffline(false);
     await syncOutbox();          // create offline tasks + flush queued entries
     await loadTasks();           // canonical list (now with real ids)
+    await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
     
@@ -2172,6 +2195,7 @@ async function init() {
     applyFont(me.preferences);
     loadBgImages();
     await loadTasks();
+    await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
     restoreTimers(); // ← restore running timers from localStorage
@@ -2310,7 +2334,7 @@ async function afterAuth(res) {
   applyGradient(me.preferences);
   applyBackground(me.preferences);
   applyFont(me.preferences);
-  await loadTasks(); await loadTodayEntries(); await fetchWeekTotal();
+  await loadTasks(); await loadTaskTypes(); await loadTodayEntries(); await fetchWeekTotal();
   restoreTimers();
   await syncOutbox();
   
@@ -2332,12 +2356,13 @@ function logout() {
     });
   });
   token = null; localStorage.removeItem('tt_token'); localStorage.removeItem('tt_timers');
-  me = null; tasks = []; liveTimers = {}; todayEntries = []; weekSecCache = null;
+  me = null; tasks = []; taskTypes = []; liveTimers = {}; todayEntries = []; weekSecCache = null;
   showPage('authPage');
 }
 
 // ── TASKS ──
 async function loadTasks() { tasks = await apiFetch('/tasks'); cacheSet('tt_tasks', tasks); mergePendingTasks(); }
+async function loadTaskTypes() { taskTypes = await apiFetch('/task-types'); cacheSet('tt_taskTypes', taskTypes); }
 
 function showNewTask() {
   hideResetConfirm();
@@ -2700,7 +2725,10 @@ function renderTaskList() {
           : `<div class="drag-handle" title="Drag to sort">⠿</div>`}
         <div class="task-info">
           <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Created offline — syncs when online">offline</span>' : ''}</div>
-          <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+          <div class="task-sub">
+            <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+            ${!selectionMode && !task._pending ? taskTypeSelectHtml(task) : ''}
+          </div>
         </div>
         ${selectionMode
           ? `<button class="ctrl pin-btn${task.pinned ? ' pinned' : ''}" title="${task.pinned ? 'Unpin — allow deletion' : 'Pin — protect from deletion'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="${task.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg></button>`
@@ -2729,9 +2757,16 @@ function renderTaskList() {
     } else {
       // Normal mode
       card.addEventListener('click', e => {
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button, select')) return;
         selectTask(task.id);
       });
+      const typeSel = card.querySelector('.task-type-select');
+      if (typeSel) {
+        typeSel.addEventListener('change', () => setTaskType(task.id, typeSel));
+        // A draggable card swallows clicks on its form controls in some browsers
+        typeSel.addEventListener('mouseenter', () => { card.draggable = false; });
+        typeSel.addEventListener('mouseleave', () => { card.draggable = true; });
+      }
       card.querySelector('.task-name').addEventListener('dblclick', () => startEditTaskName(task.id));
       card.querySelector('.task-time').addEventListener('dblclick', () => openEditTime(task.id));
       card.querySelector('.ctrl.pp').addEventListener('click', () => {
@@ -2758,6 +2793,95 @@ function renderTaskList() {
     el.appendChild(card);
   });
   renderBottomStats();
+}
+
+// ── TASK TYPES ──
+// The dropdown is hidden until the user has added at least one type in Settings.
+function taskTypeSelectHtml(task) {
+  if (!taskTypes.length) return '';
+  const known = taskTypes.some(t => t.id === task.task_type_id);
+  return `<select class="task-type-select${known ? ' has-type' : ''}" title="Task type">
+      <option value="">No type</option>
+      ${taskTypes.map(t => `<option value="${t.id}"${t.id === task.task_type_id ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}
+    </select>`;
+}
+
+async function setTaskType(taskId, sel) {
+  const task = tasks.find(t => t.id === taskId); if (!task) return;
+  const prev = task.task_type_id ?? null;
+  const next = sel.value === '' ? null : parseInt(sel.value);
+  sel.classList.toggle('has-type', next !== null);
+  try {
+    await apiFetch(`/tasks/${taskId}`, { method: 'PATCH', body: { task_type_id: next } });
+    task.task_type_id = next;
+    cacheSet('tt_tasks', tasks.filter(t => !t._pending));
+  } catch (e) {
+    sel.value = prev === null ? '' : String(prev);
+    sel.classList.toggle('has-type', prev !== null);
+    toast(e.message, 'err');
+  }
+}
+
+function renderTaskTypeSettings() {
+  const el = document.getElementById('taskTypeList');
+  if (!taskTypes.length) {
+    el.innerHTML = '<div class="type-empty">No types yet — add your first one below.</div>';
+    return;
+  }
+  el.innerHTML = taskTypes.map(t => `
+    <div class="type-row" data-id="${t.id}">
+      <input class="form-input" type="text" maxlength="40" value="${esc(t.name)}" aria-label="Type name">
+      <button class="ctrl del" title="Delete type">🗑</button>
+    </div>`).join('');
+  el.querySelectorAll('.type-row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    const input = row.querySelector('input');
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { input.value = taskTypes.find(t => t.id === id)?.name ?? ''; input.blur(); }
+    });
+    input.addEventListener('change', () => renameTaskType(id, input));
+    row.querySelector('.del').addEventListener('click', () => requestDeleteTaskType(id));
+  });
+}
+
+async function addTaskType() {
+  const input = document.getElementById('newTaskTypeInput');
+  const name = input.value.trim();
+  if (!name) return;
+  setBtnLoading('addTaskTypeBtn', true);
+  try {
+    taskTypes.push(await apiFetch('/task-types', { method: 'POST', body: { name } }));
+    cacheSet('tt_taskTypes', taskTypes);
+    input.value = '';
+    renderTaskTypeSettings(); renderTaskList();
+  } catch (e) { toast(e.message, 'err'); }
+  setBtnLoading('addTaskTypeBtn', false);
+}
+
+async function renameTaskType(id, input) {
+  const type = taskTypes.find(t => t.id === id); if (!type) return;
+  const name = input.value.trim();
+  if (name === type.name) { input.value = type.name; return; }
+  try {
+    type.name = (await apiFetch(`/task-types/${id}`, { method: 'PATCH', body: { name } })).name;
+    cacheSet('tt_taskTypes', taskTypes);
+    renderTaskList();
+  } catch (e) { toast(e.message, 'err'); }
+  input.value = type.name;
+}
+
+function requestDeleteTaskType(id) {
+  const type = taskTypes.find(t => t.id === id); if (!type) return;
+  showConfirm('Delete type', `"${type.name}" is removed from the list and cleared from tasks that use it.`, async () => {
+    try {
+      await apiFetch(`/task-types/${id}`, { method: 'DELETE' });
+      taskTypes = taskTypes.filter(t => t.id !== id);
+      tasks.forEach(t => { if (t.task_type_id === id) t.task_type_id = null; });
+      cacheSet('tt_taskTypes', taskTypes);
+      renderTaskTypeSettings(); renderTaskList();
+    } catch (e) { toast(e.message, 'err'); }
+  });
 }
 
 function selectTask(id) {
@@ -3545,6 +3669,7 @@ function loadSettingsForm() {
   document.getElementById('sWeekGoal').value = weekGoalH;
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
   document.getElementById('sIdleMin').value = idleWarnMin;
+  renderTaskTypeSettings();
   loadApiKeyStatus();
   renderFontPicker();
   renderChangelog();
@@ -3796,6 +3921,8 @@ function setupEventListeners() {
   // Settings
   document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
   document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
+  document.getElementById('addTaskTypeBtn').addEventListener('click', addTaskType);
+  document.getElementById('newTaskTypeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTaskType(); });
   document.getElementById('changePwdBtn').addEventListener('click', changePassword);
   document.getElementById('generateApiKeyBtn').addEventListener('click', generateApiKey);
   document.getElementById('revokeApiKeyBtn').addEventListener('click', revokeApiKey);
