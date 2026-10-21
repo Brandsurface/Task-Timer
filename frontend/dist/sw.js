@@ -1,5 +1,5 @@
 // TaskTimer Service Worker — offline app shell cache
-const CACHE = 'tasktimer-v3';
+const CACHE = 'tasktimer-v4';
 const SHELL = ['/'];
 
 self.addEventListener('install', e => {
