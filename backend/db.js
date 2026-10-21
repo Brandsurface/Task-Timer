@@ -94,6 +94,12 @@ if (!userCols.includes('day_end_minute')) {
 if (!userCols.includes('api_key')) {
   db.exec('ALTER TABLE users ADD COLUMN api_key TEXT');
 }
+// "Clean start" setting: archive unstarred tasks on the first visit of a new day.
+// clean_start_date = the day it last ran (or was switched on).
+if (!userCols.includes('clean_start')) {
+  db.exec('ALTER TABLE users ADD COLUMN clean_start INTEGER NOT NULL DEFAULT 0');
+  db.exec('ALTER TABLE users ADD COLUMN clean_start_date TEXT');
+}
 
 // App-level settings (key/value) — backup retention, scheduler state etc.
 db.exec(`

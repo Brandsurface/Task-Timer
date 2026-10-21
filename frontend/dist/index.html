@@ -960,6 +960,17 @@ body.has-bg-image #bgDotOverlay { display: block; }
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-title">Start of day</div>
+        <div class="settings-body">
+          <label class="remember-row">
+            <input type="checkbox" id="sCleanStart" class="remember-checkbox" />
+            <span class="remember-track"><span class="remember-thumb"></span></span>
+            <span class="remember-label">Start each day with a clean timer</span>
+          </label>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">The first time you open the app on a new day, task cards that aren't starred (★) are removed. Starred cards stay, and so does anything created or used today. Removed tasks keep their history in Week view. Star a card with Select → ★.</div>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-title">Task types</div>
         <div class="settings-body">
           <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a dropdown on every task card, e.g. Design, HTML programming or 3D render. Edit a name to rename it.</div>
@@ -1656,6 +1667,7 @@ async function refreshFromServer() {
     await loadTaskTypes();
     await loadTodayEntries();
     await fetchWeekTotal();
+    await maybeCleanStart();
     
     renderTaskList();
     startExtensionPoll();        // guarded — won't double-start
@@ -2213,6 +2225,7 @@ async function init() {
     await fetchWeekTotal();
     restoreTimers(); // ← restore running timers from localStorage
     await syncOutbox(); // ← sync any pending offline entries + tasks
+    await maybeCleanStart();
 
     showPage('appPage');
     renderTaskList();
@@ -2350,6 +2363,7 @@ async function afterAuth(res) {
   await loadTasks(); await loadTaskTypes(); await loadTodayEntries(); await fetchWeekTotal();
   restoreTimers();
   await syncOutbox();
+  await maybeCleanStart();
   
   showPage('appPage'); renderTaskList(); scheduleAutoStop(); startTicker();
   startExtensionPoll();
@@ -2706,6 +2720,8 @@ document.addEventListener('visibilitychange', () => {
     const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
     _hiddenAt = null;
     maybeOfferIdleSubtract(away);
+    // A tab left open overnight counts as a new day when you come back to it
+    maybeCleanStart().then(cleared => { if (cleared) renderTaskList(); });
   }
 });
 
@@ -2874,6 +2890,36 @@ function renderTaskList() {
     el.appendChild(card);
   });
   renderBottomStats();
+}
+
+// ── CLEAN START ──
+// Optional setting: on the first visit of a new day the server archives the
+// task cards that aren't starred (pinned). The server decides what is safe to
+// remove; we only say which timers are running and drop the answer from the list.
+async function maybeCleanStart() {
+  if (!token || !me?.clean_start || !navigator.onLine) return false;
+  if (me.clean_start_date && me.clean_start_date >= todayStr()) return false;
+  try {
+    const res = await apiFetch('/tasks/clean-start', { method: 'POST', body: { keep: Object.keys(liveTimers).map(Number) } });
+    me.clean_start_date = res.date; cacheSet('tt_me', me);
+    if (!res.ids.length) return false;
+    const gone = new Set(res.ids);
+    tasks = tasks.filter(t => !gone.has(t.id));
+    cacheSet('tt_tasks', tasks.filter(t => !t._pending));
+    if (gone.has(selectedTaskId)) selectedTaskId = null;
+    toast(`Clean start: ${res.ids.length} task${res.ids.length === 1 ? '' : 's'} from earlier days removed`, 'ok');
+    return true;
+  } catch { return false; }  // offline or server hiccup — tried again next time the app is opened
+}
+
+async function saveCleanStart(enabled) {
+  const box = document.getElementById('sCleanStart');
+  try {
+    const updated = await apiFetch('/auth/me', { method: 'PATCH', body: { clean_start: enabled } });
+    me.clean_start = updated.clean_start; me.clean_start_date = updated.clean_start_date;
+    cacheSet('tt_me', me);
+    toast(enabled ? 'Clean start on — first clean is tomorrow' : 'Clean start off', 'ok');
+  } catch (e) { box.checked = !enabled; toast(e.message, 'err'); }
 }
 
 // ── TASK TYPES ──
@@ -3750,6 +3796,7 @@ function loadSettingsForm() {
   document.getElementById('sWeekGoal').value = weekGoalH;
   document.getElementById('sDayEnd').value = `${pad(me.day_end_hour ?? 17)}:${pad(me.day_end_minute ?? 0)}`;
   document.getElementById('sIdleMin').value = idleWarnMin;
+  document.getElementById('sCleanStart').checked = !!me.clean_start;
   renderTaskTypeSettings();
   loadApiKeyStatus();
   renderFontPicker();
@@ -4023,6 +4070,7 @@ function setupEventListeners() {
   // Settings
   document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
   document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
+  document.getElementById('sCleanStart').addEventListener('change', e => saveCleanStart(e.target.checked));
   document.getElementById('addTaskTypeBtn').addEventListener('click', addTaskType);
   document.getElementById('newTaskTypeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTaskType(); });
   document.getElementById('changePwdBtn').addEventListener('click', changePassword);

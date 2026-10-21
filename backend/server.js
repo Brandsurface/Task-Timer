@@ -168,6 +168,11 @@ function todayDK() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
 }
 
+// Calendar day (Copenhagen) of a SQLite UTC timestamp like '2026-10-21 12:25:10'
+function dkDateOf(sqliteUtc) {
+  return new Date(sqliteUtc.replace(' ', 'T') + 'Z').toLocaleDateString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+}
+
 function timeToSeconds(start, end) {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
@@ -201,7 +206,7 @@ app.post('/api/auth/register', (req, res) => {
       'INSERT INTO users (email, name, password, role) VALUES (?, ?, ?, ?)'
     ).run(email.toLowerCase().trim(), name.trim(), hash, role);
 
-    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const user  = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(result.lastInsertRowid);
     try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user });
@@ -325,14 +330,14 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 app.get('/api/auth/me', auth, (req, res) => {
-  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   try { user.preferences = user.preferences ? JSON.parse(user.preferences) : null; } catch { user.preferences = null; }
   res.json(user);
 });
 
 app.patch('/api/auth/me', auth, (req, res) => {
-  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences } = req.body;
+  const { name, day_end_hour, day_end_minute, current_password, new_password, preferences, clean_start } = req.body;
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -357,6 +362,12 @@ app.patch('/api/auth/me', auth, (req, res) => {
     updates.password = bcrypt.hashSync(new_password, 10);
   }
 
+  if (clean_start !== undefined) {
+    updates.clean_start = clean_start ? 1 : 0;
+    // Switching it on mid-day must not wipe today's list — the first clean is tomorrow
+    if (clean_start && !user.clean_start) updates.clean_start_date = todayDK();
+  }
+
   if (preferences !== undefined) {
     if (typeof preferences !== 'object' || preferences === null)
       return res.status(400).json({ error: 'Invalid preferences' });
@@ -368,7 +379,7 @@ app.patch('/api/auth/me', auth, (req, res) => {
   const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   db.prepare(`UPDATE users SET ${sets} WHERE id = ?`).run(...Object.values(updates), req.user.id);
 
-  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences FROM users WHERE id = ?').get(req.user.id);
+  const updated = db.prepare('SELECT id, email, name, role, day_end_hour, day_end_minute, preferences, clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
   try { updated.preferences = updated.preferences ? JSON.parse(updated.preferences) : null; } catch { updated.preferences = null; }
   res.json(updated);
 });
@@ -487,6 +498,38 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   db.prepare(`UPDATE tasks SET ${sets} WHERE id = ?`).run(...Object.values(updates), task.id);
   res.json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(task.id));
+});
+
+// Clean start — optional per-user setting. The first time the app is opened on
+// a new day, active tasks that are not pinned (starred) are archived, so the
+// timer starts the day empty. Archiving keeps the history in Week view.
+// Left alone: pinned tasks, tasks created or used today, tasks with a running
+// timer (keep[]) and tasks the Chrome extension is about to start.
+// The day is stored per user, so a second device on the same day does nothing.
+app.post('/api/tasks/clean-start', auth, (req, res) => {
+  const today = todayDK();
+  const user = db.prepare('SELECT clean_start, clean_start_date FROM users WHERE id = ?').get(req.user.id);
+  if (!user.clean_start || (user.clean_start_date && user.clean_start_date >= today)) {
+    return res.json({ date: today, cleared: 0, ids: [] });
+  }
+
+  const keep = new Set((Array.isArray(req.body.keep) ? req.body.keep : []).map(Number));
+  const usedToday = new Set(
+    db.prepare('SELECT DISTINCT task_id FROM time_entries WHERE user_id = ? AND date >= ?')
+      .all(req.user.id, today).map(r => r.task_id)
+  );
+  const ids = db.prepare(
+    'SELECT id, created_at FROM tasks WHERE user_id = ? AND archived = 0 AND pinned = 0 AND pending_start = 0'
+  ).all(req.user.id)
+    .filter(t => !keep.has(t.id) && !usedToday.has(t.id) && dkDateOf(t.created_at) < today)
+    .map(t => t.id);
+
+  db.transaction(() => {
+    const archive = db.prepare('UPDATE tasks SET archived = 1 WHERE id = ?');
+    ids.forEach(id => archive.run(id));
+    db.prepare('UPDATE users SET clean_start_date = ? WHERE id = ?').run(today, req.user.id);
+  })();
+  res.json({ date: today, cleared: ids.length, ids });
 });
 
 app.post('/api/tasks/reorder', auth, (req, res) => {

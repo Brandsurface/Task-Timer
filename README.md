@@ -170,6 +170,11 @@ ports:
 - **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
   vises live i browserfanens titel
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
+- **Ren start på dagen** — valgfrit under Settings → Start of day. Første gang du åbner
+  appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ via Select).
+  Stjernemarkerede kort bliver, og det samme gør opgaver oprettet eller brugt i dag og
+  kørende timere. Fjernede opgaver er arkiveret, så historikken står i Week og navnene
+  kan findes igen via forslagene ved nyt job. Slået til midt på dagen starter det først i morgen
 - **Glemt timer** — har du været væk (fanen skjult, laptop lukket, browser genstartet)
   med en kørende timer, tilbyder appen at fratrække fraværet. Tærskel indstilles
   under Settings (standard 30 min, 0 = fra)
@@ -183,7 +188,7 @@ ports:
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
 - **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
-  opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+  ren dagsstart, opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
 - **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
   da de er dokumenter til kunder/bogholderi)
 
