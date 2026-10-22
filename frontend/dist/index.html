@@ -324,8 +324,14 @@ body::after {
 .pending-badge { display: inline-block; margin-left: 7px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--orange); background: var(--orange-dim); border: 1px solid rgba(240,124,40,0.35); border-radius: 4px; vertical-align: middle; }
 .task-name-edit { background: transparent; border: none; border-bottom: 1px solid var(--orange); outline: none; font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); width: 100%; padding: 0 0 1px; }
 .task-time { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--orange); margin-top: 1px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.03em; flex-wrap: wrap; }
-.task-sub { display: flex; align-items: center; gap: 4px 8px; flex-wrap: wrap; }
-.task-type-select { margin-left: auto; flex: 1 1 56px; min-width: 0; max-width: 130px; height: 18px; padding: 0 16px 0 6px; -webkit-appearance: none; appearance: none; background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%238a8f98' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 5px center; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-family: var(--sans); font-size: 10px; line-height: 16px; cursor: pointer; outline: none; text-overflow: ellipsis; transition: border-color 0.12s, color 0.12s; }
+.task-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.task-head .task-name, .task-head .task-name-edit { flex: 1; min-width: 0; }
+.task-row { display: flex; align-items: center; gap: 8px; }
+.task-row .task-time { flex: 1; min-width: 0; }
+.star-btn { flex: none; width: 18px; height: 18px; margin-left: -3px; padding: 0; border: none; background: none; border-radius: 4px; color: var(--text-muted); opacity: 0.5; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.12s, color 0.12s; }
+.star-btn:hover { opacity: 1; color: var(--orange); }
+.star-btn.on { opacity: 1; color: var(--orange); }
+.task-type-select { flex: none; min-width: 0; max-width: 130px; height: 18px; padding: 0 16px 0 6px; -webkit-appearance: none; appearance: none; background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%238a8f98' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 5px center; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-family: var(--sans); font-size: 10px; line-height: 16px; cursor: pointer; outline: none; text-overflow: ellipsis; transition: border-color 0.12s, color 0.12s; }
 .task-type-select.has-type { color: var(--text-dim); }
 .task-type-select:hover, .task-type-select:focus { border-color: var(--orange); color: var(--text); }
 .task-type-select option { background: var(--surface2); color: var(--text); }
@@ -336,6 +342,9 @@ body::after {
 .ctrl { width: 24px; height: 24px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-size: 12px; flex-shrink: 0; user-select: none; }
 .ctrl:active { transform: scale(0.88); }
 .ctrl:hover { border-color: var(--border2); color: var(--text); }
+/* Secondary card actions: quiet icons, a box only on hover — Start/Stop stays the one solid button */
+.ctrl.ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+.ctrl.ghost:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
 .ctrl.pp { background: var(--surface3); color: var(--text); }
 .ctrl.pp.running { background: var(--orange-grad); border-color: transparent; color: #fff; box-shadow: var(--shadow-orange); }
 .ctrl.pp:hover:not(.running) { border-color: var(--orange); color: var(--orange); }
@@ -983,12 +992,12 @@ body.has-bg-image #bgDotOverlay { display: block; }
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-title">Task types</div>
+        <div class="settings-title">Work areas</div>
         <div class="settings-body">
-          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a dropdown on every task card, e.g. Design, HTML programming or 3D render. Edit a name to rename it.</div>
+          <div class="form-hint" style="color:var(--text-dim);line-height:1.6;margin-top:0">These appear in a small dropdown on every task card — for example 10, 20 … 100, or Design and 3D render. Two cards can share a job name when their work areas differ: use the copy button on a card. Edit a name to rename it.</div>
           <div class="type-list" id="taskTypeList"></div>
           <div class="settings-row" style="gap:8px">
-            <input class="form-input" id="newTaskTypeInput" type="text" maxlength="40" placeholder="New type, e.g. Design" style="flex:1;min-width:0" />
+            <input class="form-input" id="newTaskTypeInput" type="text" maxlength="40" placeholder="New work area, e.g. 10" style="flex:1;min-width:0" />
             <button class="btn btn-primary btn-sm" id="addTaskTypeBtn"><span class="btn-text">Add</span></button>
           </div>
         </div>
@@ -2503,7 +2512,8 @@ async function submitNewTask() {
   if (!name) return;
   hideTaskSuggest();
   // Duplicate names are not allowed — warn and keep the input so it can be edited
-  const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase());
+  // New tasks have no work area yet, so only a same-name card without one clashes
+  const dup = tasks.find(t => t.name.trim().toLowerCase() === name.toLowerCase() && !t.task_type_id);
   if (dup) {
     showAlert('Task already exists', `A task named "${dup.name}" already exists. Use the existing task, or choose another name.`);
     return;
@@ -2578,9 +2588,10 @@ async function startEditTaskName(id) {
     const v = inp.value.trim();
     if (v && v !== task.name) {
       // Renaming to another task's name would create a duplicate — warn and revert
-      const dup = tasks.find(t => t.id !== id && t.name.trim().toLowerCase() === v.toLowerCase());
+      const dup = tasks.find(t => t.id !== id && t.name.trim().toLowerCase() === v.toLowerCase()
+        && (t.task_type_id ?? null) === (task.task_type_id ?? null));
       if (dup) {
-        showAlert('Task already exists', `A task named "${dup.name}" already exists. Choose another name.`);
+        showAlert('Task already exists', `A task named "${taskLabel(dup)}" already exists. Choose another name or work area.`);
         renderTaskList();
         return;
       }
@@ -2721,7 +2732,7 @@ function updateTabTitle() {
   if (runningId === undefined) { document.title = 'TaskTimer'; return; }
   const task = tasks.find(t => t.id === parseInt(runningId));
   const sec  = liveSec(parseInt(runningId));
-  document.title = task ? `${hms(sec)} · ${task.name} — TaskTimer` : `${hms(sec)} — TaskTimer`;
+  document.title = task ? `${hms(sec)} · ${taskLabel(task)} — TaskTimer` : `${hms(sec)} — TaskTimer`;
 }
 
 function scheduleAutoStop() {
@@ -2880,20 +2891,24 @@ function renderTaskList() {
           ? `<div class="task-checkbox${!task.pinned && selectedTaskIds.has(task.id) ? ' checked' : ''}${task.pinned ? ' pinned-placeholder' : ''}"></div>`
           : `<div class="drag-handle" title="Drag to sort">⠿</div>`}
         <div class="task-info">
-          <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Created offline — syncs when online">offline</span>' : ''}</div>
-          <div class="task-sub">
-            <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
+          <div class="task-head">
+            ${!selectionMode && !task._pending ? `<button class="star-btn${task.pinned ? ' on' : ''}" title="${task.pinned ? 'Starred — kept by Clean start and safe from bulk delete. Click to remove the star' : 'Star this card to keep it'}" aria-pressed="${!!task.pinned}">${starSvg(task.pinned)}</button>` : ''}
+            <div class="task-name" id="tn-${task.id}" title="Double-click to rename">${esc(task.name)}${task._pending ? '<span class="pending-badge" title="Created offline — syncs when online">offline</span>' : ''}</div>
             ${!selectionMode && !task._pending ? taskTypeSelectHtml(task) : ''}
           </div>
-        </div>
+          <div class="task-row">
+            <div class="task-time" id="tt-${task.id}" title="Double-click to edit time" style="cursor:pointer">${hms(sec)}${isRunning ? '<span class="live-dot"></span>' : ''}${budgetMeta}</div>
         ${selectionMode
-          ? `<button class="ctrl pin-btn${task.pinned ? ' pinned' : ''}" title="${task.pinned ? 'Unpin — allow deletion' : 'Pin — protect from deletion'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="${task.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg></button>`
+          ? `<button class="ctrl pin-btn${task.pinned ? ' pinned' : ''}" title="${task.pinned ? 'Remove star — allow deletion' : 'Star — protect from deletion'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="${task.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg></button>`
           : `<div class="task-controls">
           <button class="ctrl pp${isRunning ? ' running' : ''}" title="${isRunning ? 'Stop' : 'Start'}">${isRunning ? '⏸' : '▶'}</button>
-          <button class="ctrl copy-btn" title="Copy task name"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>
-          <button class="ctrl budget-btn${budget > 0 ? ' budget-active' : ''}" title="${budget > 0 ? 'Edit budget' : 'Set budget'}">◎</button>
-          <button class="ctrl del" title="Delete">🗑</button>
+          <button class="ctrl ghost copy-btn" title="Copy job number"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>
+          ${!task._pending && !task.is_idle ? `<button class="ctrl ghost dup-btn" title="Copy card — same job, another work area"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg></button>` : ''}
+          <button class="ctrl ghost budget-btn${budget > 0 ? ' budget-active' : ''}" title="${budget > 0 ? 'Edit budget' : 'Set budget'}">◎</button>
+          <button class="ctrl ghost del" title="Delete">🗑</button>
         </div>`}
+          </div>
+        </div>
       </div>${budgetBar}`;
 
     // Apply selected state (single-select highlight)
@@ -2934,6 +2949,8 @@ function renderTaskList() {
         const match = task.name.match(/^(\d{6})/);
         copyToClipboard(match ? match[1] : task.name);
       });
+      card.querySelector('.star-btn')?.addEventListener('click', () => togglePinTask(task.id));
+      card.querySelector('.ctrl.dup-btn')?.addEventListener('click', () => duplicateTask(task.id));
       card.querySelector('.ctrl.budget-btn').addEventListener('click', () => openBudgetModal(task.id));
       card.querySelector('.ctrl.del').addEventListener('click', () => requestDeleteTask(task.id));
       card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', String(task.id)); setTimeout(() => card.classList.add('dragging'), 0); });
@@ -3039,14 +3056,41 @@ async function saveCleanStart(enabled) {
   } catch (e) { box.checked = !enabled; toast(e.message, 'err'); }
 }
 
+function starSvg(on) {
+  return `<svg viewBox="0 0 24 24" width="13" height="13" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6H21l-5.4 4 2 6.3L12 14.8 6.4 18.3l2-6.3L3 8h6.6L12 2z"/></svg>`;
+}
+
+// "Job (20)" — the work area tells two cards for the same job apart
+function taskLabel(t) {
+  const type = taskTypes.find(x => x.id === t.task_type_id);
+  return type ? `${t.name} (${type.name})` : t.name;
+}
+function entryLabel(e) { return e.task_type_name ? `${e.task_name} (${e.task_type_name})` : e.task_name; }
+
+// Copy button: a second card for the same job, placed right below, with its own work area
+async function duplicateTask(taskId) {
+  try {
+    const copy = await apiFetch(`/tasks/${taskId}/duplicate`, { method: 'POST' });
+    tasks.splice(tasks.findIndex(t => t.id === taskId) + 1, 0, copy);
+    cacheSet('tt_tasks', tasks.filter(t => !t._pending));
+    renderTaskList();
+    const card = document.querySelector(`.task-card[data-id="${copy.id}"]`);
+    if (card) { card.classList.add('pop'); setTimeout(() => card.classList.remove('pop'), 300); }
+    card?.querySelector('.task-type-select')?.focus();
+    toast('Card copied — choose its work area', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
 // ── TASK TYPES ──
 // The dropdown is hidden until the user has added at least one type in Settings.
 function taskTypeSelectHtml(task) {
   if (!taskTypes.length) return '';
   const known = taskTypes.some(t => t.id === task.task_type_id);
-  return `<select class="task-type-select${known ? ' has-type' : ''}" title="Task type">
-      <option value="">No type</option>
-      ${taskTypes.map(t => `<option value="${t.id}"${t.id === task.task_type_id ? ' selected' : ''}>${esc(t.name)}</option>`).join('')}
+  // As narrow as the longest work area name allows — "100" needs about 3 characters
+  const chars = Math.min(18, Math.max(1, ...taskTypes.map(t => t.name.length)));
+  return `<select class="task-type-select${known ? ' has-type' : ''}" title="Work area" style="width:calc(${chars}ch + 24px)">
+      <option value="">–</option>
+      ${taskTypes.map(t => `<option value="${t.id}"${t.id === task.task_type_id ? ' selected' : ''}>${esc(taskLabel(t))}</option>`).join('')}
     </select>`;
 }
 
@@ -3069,13 +3113,13 @@ async function setTaskType(taskId, sel) {
 function renderTaskTypeSettings() {
   const el = document.getElementById('taskTypeList');
   if (!taskTypes.length) {
-    el.innerHTML = '<div class="type-empty">No types yet — add your first one below.</div>';
+    el.innerHTML = '<div class="type-empty">No work areas yet — add your first one below.</div>';
     return;
   }
   el.innerHTML = taskTypes.map(t => `
     <div class="type-row" data-id="${t.id}">
-      <input class="form-input" type="text" maxlength="40" value="${esc(t.name)}" aria-label="Type name">
-      <button class="ctrl del" title="Delete type">🗑</button>
+      <input class="form-input" type="text" maxlength="40" value="${esc(t.name)}" aria-label="Work area name">
+      <button class="ctrl del" title="Delete work area">🗑</button>
     </div>`).join('');
   el.querySelectorAll('.type-row').forEach(row => {
     const id = parseInt(row.dataset.id);
@@ -3117,7 +3161,7 @@ async function renameTaskType(id, input) {
 
 function requestDeleteTaskType(id) {
   const type = taskTypes.find(t => t.id === id); if (!type) return;
-  showConfirm('Delete type', `"${type.name}" is removed from the list and cleared from tasks that use it.`, async () => {
+  showConfirm('Delete work area', `"${type.name}" is removed from the list and cleared from the cards that use it.`, async () => {
     try {
       await apiFetch(`/task-types/${id}`, { method: 'DELETE' });
       taskTypes = taskTypes.filter(t => t.id !== id);
@@ -3214,7 +3258,7 @@ async function togglePinTask(taskId) {
       updateBulkBar();
     }
     renderTaskList();
-    toast(newPinned ? '📌 Task pinned' : 'Task unpinned', 'ok');
+    toast(newPinned ? '★ Starred' : 'Star removed', 'ok');
   } catch (e) { toast(e.message, 'err'); }
 }
 
@@ -3316,7 +3360,7 @@ async function showEndDay() {
   if (!todayEntries.length) { toast('No time to save today', 'warn'); return; }
   const byTask = {};
   todayEntries.forEach(e => {
-    if (!byTask[e.task_id]) byTask[e.task_id] = { name: e.task_name, seconds: 0 };
+    if (!byTask[e.task_id]) byTask[e.task_id] = { name: entryLabel(e), seconds: 0 };
     byTask[e.task_id].seconds += e.seconds;
   });
   document.getElementById('endDayList').innerHTML = Object.values(byTask).map(t =>
@@ -3769,7 +3813,7 @@ async function renderWeek() {
            </div>`).join('');
         return `<div class="week-entry we-group${open ? ' open' : ''}" data-gkey="${gkey}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time} · ×${g.count}</div></div>
+           <div class="we-body"><div class="we-task">${esc(entryLabel(g))}</div><div class="we-meta">${g.start_time}–${g.end_time} · ×${g.count}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
            <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-chev">▸</div>
@@ -3778,7 +3822,7 @@ async function renderWeek() {
       }
       return `<div class="week-entry" data-eid="${g.id}">
            <div class="we-dot" style="background:${esc(g.task_color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(g.task_name)}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
+           <div class="we-body"><div class="we-task">${esc(entryLabel(g))}</div><div class="we-meta">${g.start_time}–${g.end_time}${g.note ? ' · '+esc(g.note) : ''}</div></div>
            <div class="we-copy" data-name="${esc(g.task_name)}" title="Copy job number">${_copySvg}</div>
            <div class="we-dur">${hmsText(g.seconds)}</div>
            <div class="we-del" data-did="${g.id}" title="Delete">✕</div>
@@ -3792,7 +3836,7 @@ async function renderWeek() {
       const liveRows = tasks.filter(t => liveTimers[t.id]).map(t =>
         `<div class="week-entry">
            <div class="we-dot" style="background:${esc(t.color||'#f07c28')}"></div>
-           <div class="we-body"><div class="we-task">${esc(t.name)}</div><div class="we-meta">Running…</div></div>
+           <div class="we-body"><div class="we-task">${esc(taskLabel(t))}</div><div class="we-meta">Running…</div></div>
            <div class="we-dur">${hmsText(liveSec(t.id))}</div>
          </div>`).join('');
       entriesHtml = committedRows + liveRows || '<div class="week-empty">No time yet</div>';
@@ -3857,7 +3901,7 @@ async function editEntry(id) {
   document.getElementById('editEntryEnd').value   = entry.end_time;
   document.getElementById('editEntryNote').value  = entry.note || '';
   document.getElementById('editEntryTask').innerHTML = tasks.map(t =>
-    `<option value="${t.id}"${t.id === entry.task_id ? ' selected' : ''}>${esc(t.name)}</option>`).join('');
+    `<option value="${t.id}"${t.id === entry.task_id ? ' selected' : ''}>${esc(taskLabel(t))}</option>`).join('');
   hideError('editEntryError'); openModal('editEntryModal');
 }
 
@@ -3893,7 +3937,7 @@ function openAddEntry(dateStr) {
   document.getElementById('addEntryStart').value = '09:00';
   document.getElementById('addEntryEnd').value   = '10:00';
   document.getElementById('addEntryNote').value  = '';
-  document.getElementById('addEntryTask').innerHTML = tasks.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  document.getElementById('addEntryTask').innerHTML = tasks.map(t => `<option value="${t.id}">${esc(taskLabel(t))}</option>`).join('');
   hideError('addEntryError'); openModal('addEntryModal');
 }
 
