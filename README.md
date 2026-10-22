@@ -184,7 +184,7 @@ ports:
   tæller ikke med i dag-/ugemål eller i PDF/CSV-eksport, men vises i Week. Pause selve
   Idle Time-kortet for at stoppe registreringen
 - **Aktivt kort øverst** — kortet med den kørende timer glider op øverst på listen, og de
-  andre kort gør plads. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
+  andre kort gør plads. Idle Time-kortet ligger altid nederst, også når det kører. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
   tilbage til sin plads. Det kørende kort kan ikke trækkes rundt. Respekterer
   "reducer bevægelse" i styresystemet
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
