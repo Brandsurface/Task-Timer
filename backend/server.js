@@ -475,13 +475,34 @@ app.get('/api/tasks/suggest', auth, (req, res) => {
 
 // Case-insensitive duplicate check among the user's active (non-archived)
 // tasks. Archived tasks don't count — deleting a task archives it, and the
-// name must be reusable afterwards.
-function findDuplicateTask(userId, name, excludeId = null) {
+// name must be reusable afterwards. Two cards may share a name when their work
+// area (task type) differs — that is how one job is split over two areas.
+// Names are compared in JS: SQLite's LOWER() only folds A–Z, so "BLÅ" and "blå"
+// would otherwise count as two different names.
+const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+function activeTasksNamed(userId, name, excludeId = null) {
   return db.prepare(`
-    SELECT id, name FROM tasks
-    WHERE user_id = ? AND archived = 0 AND LOWER(name) = LOWER(?)
-    ${excludeId ? 'AND id != ?' : ''}
-  `).get(...[userId, name.trim(), ...(excludeId ? [excludeId] : [])]);
+    SELECT t.id, t.name, t.task_type_id, t.sort_order, tt.name AS type_name FROM tasks t
+    LEFT JOIN task_types tt ON tt.id = t.task_type_id
+    WHERE t.user_id = ? AND t.archived = 0
+  `).all(userId).filter(t => t.id !== excludeId && sameName(t.name, name));
+}
+
+function findDuplicateTask(userId, name, excludeId = null, typeId = null) {
+  return activeTasksNamed(userId, name, excludeId).find(t => t.task_type_id === (typeId ?? null));
+}
+
+function duplicateMessage(dup) {
+  return dup.type_name
+    ? `"${dup.name}" already has a card with work area ${dup.type_name}`
+    : `A task named "${dup.name}" already exists`;
+}
+
+// Chrome extension: reuse any active task with that name, whatever its work area
+function findTaskByName(userId, name) {
+  const same = activeTasksNamed(userId, name);
+  return same.find(t => t.task_type_id === null) || same.sort((a, b) => a.sort_order - b.sort_order)[0];
 }
 
 app.post('/api/tasks', auth, (req, res) => {
@@ -489,7 +510,7 @@ app.post('/api/tasks', auth, (req, res) => {
   if (!name?.trim()) return res.status(400).json({ error: 'Task name required' });
 
   const dup = findDuplicateTask(req.user.id, name);
-  if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
+  if (dup) return res.status(409).json({ error: duplicateMessage(dup) });
 
   // New tasks go to the top: take the lowest sort_order and subtract 1.
   // O(1) — preserves every existing task's order without mass updates.
@@ -510,8 +531,6 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
   if (name !== undefined) {
     const trimmed = name.trim();
     if (!trimmed) return res.status(400).json({ error: 'Task name cannot be empty' });
-    const dup = findDuplicateTask(req.user.id, trimmed, task.id);
-    if (dup) return res.status(409).json({ error: `A task named "${dup.name}" already exists` });
     updates.name = trimmed;
   }
   if (color          !== undefined) updates.color          = color;
@@ -522,9 +541,15 @@ app.patch('/api/tasks/:id', auth, (req, res) => {
     if (task_type_id === null) updates.task_type_id = null;
     else {
       const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(task_type_id, req.user.id);
-      if (!type) return res.status(400).json({ error: 'Unknown task type' });
+      if (!type) return res.status(400).json({ error: 'Unknown work area' });
       updates.task_type_id = type.id;
     }
+  }
+  // A new name or work area must not clash with another card (same name + same area)
+  if (updates.name !== undefined || updates.task_type_id !== undefined) {
+    const dup = findDuplicateTask(req.user.id, updates.name ?? task.name, task.id,
+      updates.task_type_id !== undefined ? updates.task_type_id : task.task_type_id);
+    if (dup) return res.status(409).json({ error: duplicateMessage(dup) });
   }
 
   // If nothing changed, return current task as-is (idempotent)
@@ -569,6 +594,36 @@ app.post('/api/tasks/clean-start', auth, (req, res) => {
   res.json({ date: today, cleared: ids.length, ids });
 });
 
+// Copy a card: same job name, its own timer and its own work area. The copy goes
+// right below the original. It gets no work area if that is still free for this
+// job name, otherwise the first free one — the two cards must differ.
+app.post('/api/tasks/:id/duplicate', auth, (req, res) => {
+  const src = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ? AND archived = 0').get(req.params.id, req.user.id);
+  if (!src) return res.status(404).json({ error: 'Task not found' });
+  if (src.is_idle) return res.status(400).json({ error: 'Idle Time cannot be copied' });
+
+  const used = new Set(activeTasksNamed(req.user.id, src.name).map(t => t.task_type_id));
+  const types = db.prepare('SELECT id FROM task_types WHERE user_id = ? ORDER BY sort_order ASC, id ASC').all(req.user.id);
+
+  let typeId;
+  if (!used.has(null)) typeId = null;
+  else {
+    const free = types.find(t => !used.has(t.id));
+    if (!free) return res.status(409).json({ error: types.length
+      ? 'Every work area is already used for this job — add another under Settings → Work areas'
+      : 'Add work areas under Settings → Work areas first — two cards for the same job need different work areas' });
+    typeId = free.id;
+  }
+
+  const id = db.transaction(() => {
+    db.prepare('UPDATE tasks SET sort_order = sort_order + 1 WHERE user_id = ? AND sort_order > ?').run(req.user.id, src.sort_order);
+    return db.prepare(
+      'INSERT INTO tasks (user_id, name, color, sort_order, task_type_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(req.user.id, src.name, src.color, src.sort_order + 1, typeId).lastInsertRowid;
+  })();
+  res.status(201).json(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id));
+});
+
 app.post('/api/tasks/reorder', auth, (req, res) => {
   const { order } = req.body;
   if (!Array.isArray(order)) return res.status(400).json({ error: 'order must be an array' });
@@ -593,17 +648,14 @@ const TASK_TYPE_MAX_LEN = 40;
 
 function validTaskTypeName(raw) {
   const name = typeof raw === 'string' ? raw.trim() : '';
-  if (!name) return { error: 'Type name required' };
-  if (name.length > TASK_TYPE_MAX_LEN) return { error: `Type name can be at most ${TASK_TYPE_MAX_LEN} characters` };
+  if (!name) return { error: 'Work area name required' };
+  if (name.length > TASK_TYPE_MAX_LEN) return { error: `Work area name can be at most ${TASK_TYPE_MAX_LEN} characters` };
   return { name };
 }
 
 function findDuplicateTaskType(userId, name, excludeId = null) {
-  return db.prepare(`
-    SELECT id, name FROM task_types
-    WHERE user_id = ? AND LOWER(name) = LOWER(?)
-    ${excludeId ? 'AND id != ?' : ''}
-  `).get(...[userId, name, ...(excludeId ? [excludeId] : [])]);
+  return db.prepare('SELECT id, name FROM task_types WHERE user_id = ?').all(userId)
+    .find(t => t.id !== excludeId && sameName(t.name, name));   // JS compare: æ/ø/å too
 }
 
 app.get('/api/task-types', auth, (req, res) => {
@@ -616,7 +668,7 @@ app.post('/api/task-types', auth, (req, res) => {
   const v = validTaskTypeName(req.body.name);
   if (v.error) return res.status(400).json({ error: v.error });
   const dup = findDuplicateTaskType(req.user.id, v.name);
-  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+  if (dup) return res.status(409).json({ error: `A work area named "${dup.name}" already exists` });
 
   const maxOrder = db.prepare('SELECT MAX(sort_order) AS m FROM task_types WHERE user_id = ?').get(req.user.id);
   const result = db.prepare('INSERT INTO task_types (user_id, name, sort_order) VALUES (?, ?, ?)')
@@ -626,12 +678,12 @@ app.post('/api/task-types', auth, (req, res) => {
 
 app.patch('/api/task-types/:id', auth, (req, res) => {
   const type = db.prepare('SELECT * FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!type) return res.status(404).json({ error: 'Type not found' });
+  if (!type) return res.status(404).json({ error: 'Work area not found' });
 
   const v = validTaskTypeName(req.body.name);
   if (v.error) return res.status(400).json({ error: v.error });
   const dup = findDuplicateTaskType(req.user.id, v.name, type.id);
-  if (dup) return res.status(409).json({ error: `A type named "${dup.name}" already exists` });
+  if (dup) return res.status(409).json({ error: `A work area named "${dup.name}" already exists` });
 
   db.prepare('UPDATE task_types SET name = ? WHERE id = ?').run(v.name, type.id);
   res.json(db.prepare('SELECT id, name, sort_order FROM task_types WHERE id = ?').get(type.id));
@@ -639,7 +691,7 @@ app.patch('/api/task-types/:id', auth, (req, res) => {
 
 app.delete('/api/task-types/:id', auth, (req, res) => {
   const type = db.prepare('SELECT id FROM task_types WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!type) return res.status(404).json({ error: 'Type not found' });
+  if (!type) return res.status(404).json({ error: 'Work area not found' });
   db.prepare('DELETE FROM task_types WHERE id = ?').run(type.id); // tasks keep existing, type cleared via FK
   res.json({ ok: true });
 });
@@ -652,8 +704,8 @@ app.delete('/api/task-types/:id', auth, (req, res) => {
 
 app.get('/api/entries/today', auth, (req, res) => {
   const entries = db.prepare(`
-    SELECT e.*, t.name as task_name, t.color as task_color
-    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id
     WHERE e.user_id = ? AND e.date = ? AND e.committed = 0
     ORDER BY e.start_time ASC
   `).all(req.user.id, todayDK());
@@ -702,16 +754,19 @@ app.get('/api/export', auth, (req, res) => {
     return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
 
   const rows = db.prepare(`
-    SELECT e.date, t.name as task_name,
+    SELECT e.date, t.name as task_name, tt.name as type_name,
            SUM(e.seconds) as total_seconds
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
+    LEFT JOIN task_types tt ON tt.id = t.task_type_id
     WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
-    ORDER BY e.date ASC, t.name ASC
+    ORDER BY e.date ASC, t.name ASC, tt.name ASC
   `).all(...[req.user.id, from, to, ...(customerFilter ? [`${customerFilter}%`] : [])]);
+  // Two cards for the same job are told apart by their work area: "Job (20)"
+  for (const r of rows) if (r.type_name) r.task_name = `${r.task_name} (${r.type_name})`;
 
   // When filtering by customer: group by task across all dates
   // When no filter: group by date (original behaviour)
@@ -781,16 +836,17 @@ app.get('/api/export/csv', auth, (req, res) => {
     return res.status(400).json({ error: 'Customer number must be up to 6 digits' });
 
   const rows = db.prepare(`
-    SELECT e.date, t.name AS task_name,
+    SELECT e.date, t.name AS task_name, tt.name AS type_name,
            SUM(e.seconds) AS total_seconds,
            GROUP_CONCAT(NULLIF(e.note, ''), ' / ') AS notes
     FROM time_entries e
     JOIN tasks t ON t.id = e.task_id
+    LEFT JOIN task_types tt ON tt.id = t.task_type_id
     WHERE e.user_id = ? AND t.is_idle = 0
       AND e.date >= ? AND e.date <= ?
       ${customerFilter ? "AND t.name LIKE ?" : ''}
     GROUP BY e.date, e.task_id
-    ORDER BY e.date ASC, t.name ASC
+    ORDER BY e.date ASC, t.name ASC, tt.name ASC
   `).all(...[req.user.id, from, to, ...(customerFilter ? [`${customerFilter}%`] : [])]);
 
   const csvField = v => {
@@ -802,7 +858,7 @@ app.get('/api/export/csv', auth, (req, res) => {
   const decimalHours = sec => (sec / 3600).toFixed(4).replace('.', ',');
 
   let total = 0;
-  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Note', 'Timer (t:mm:ss)', 'Timer (decimal)'].join(';')];
+  const lines = [['Dato', 'Jobnr.', 'Opgave', 'Område', 'Note', 'Timer (t:mm:ss)', 'Timer (decimal)'].join(';')];
   for (const r of rows) {
     total += r.total_seconds;
     const jobMatch = r.task_name.match(/^(\d{6})/);
@@ -810,13 +866,14 @@ app.get('/api/export/csv', auth, (req, res) => {
       r.date,
       jobMatch ? jobMatch[1] : '',
       csvField(r.task_name),
+      csvField(r.type_name || ''),
       csvField(r.notes || ''),
       hhmm(r.total_seconds),
       decimalHours(r.total_seconds),
     ].join(';'));
   }
   lines.push('');
-  lines.push(['Total', '', '', '', hhmm(total), decimalHours(total)].join(';'));
+  lines.push(['Total', '', '', '', '', hhmm(total), decimalHours(total)].join(';'));
 
   const filename = `tidsrapport-${from}-${to}${customerFilter ? '-' + customerFilter : ''}.csv`;
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -828,8 +885,8 @@ app.get('/api/entries', auth, (req, res) => {
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).json({ error: 'from and to dates required' });
   const entries = db.prepare(`
-    SELECT e.*, t.name as task_name, t.color as task_color
-    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id
     WHERE e.user_id = ? AND e.date >= ? AND e.date <= ?
     ORDER BY e.date ASC, e.start_time ASC
   `).all(req.user.id, from, to);
@@ -866,8 +923,8 @@ app.post('/api/entries', auth, (req, res) => {
   `).run(req.user.id, task_id, date, start_time, end_time, seconds, note || '', committed ? 1 : 0);
 
   res.status(201).json(db.prepare(`
-    SELECT e.*, t.name as task_name, t.color as task_color
-    FROM time_entries e JOIN tasks t ON t.id = e.task_id WHERE e.id = ?
+    SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id WHERE e.id = ?
   `).get(result.lastInsertRowid));
 });
 
@@ -910,8 +967,8 @@ app.post('/api/entries/end-day', auth, (req, res) => {
   res.json({
     committed: Object.keys(byTask).length,
     entries: db.prepare(`
-      SELECT e.*, t.name as task_name, t.color as task_color
-      FROM time_entries e JOIN tasks t ON t.id = e.task_id
+      SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+      FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id
       WHERE e.user_id = ? AND e.date = ? AND e.committed = 1 AND e.updated_at = ?
       ORDER BY e.start_time ASC
     `).all(req.user.id, dk, now)
@@ -920,8 +977,8 @@ app.post('/api/entries/end-day', auth, (req, res) => {
 
 app.get('/api/entries/:id', auth, (req, res) => {
   const entry = db.prepare(`
-    SELECT e.*, t.name as task_name, t.color as task_color
-    FROM time_entries e JOIN tasks t ON t.id = e.task_id
+    SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id
     WHERE e.id = ? AND e.user_id = ?
   `).get(req.params.id, req.user.id);
   if (!entry) return res.status(404).json({ error: 'Entry not found' });
@@ -966,8 +1023,8 @@ app.patch('/api/entries/:id', auth, (req, res) => {
   db.prepare(`UPDATE time_entries SET ${sets} WHERE id = ?`).run(...Object.values(updates), entry.id);
 
   res.json(db.prepare(`
-    SELECT e.*, t.name as task_name, t.color as task_color
-    FROM time_entries e JOIN tasks t ON t.id = e.task_id WHERE e.id = ?
+    SELECT e.*, t.name as task_name, t.color as task_color, tt.name as task_type_name
+    FROM time_entries e JOIN tasks t ON t.id = e.task_id LEFT JOIN task_types tt ON tt.id = t.task_type_id WHERE e.id = ?
   `).get(entry.id));
 });
 
@@ -1295,7 +1352,7 @@ app.post('/api/extension/task', authOrApiKey, (req, res) => {
 
   // Same name already exists: reuse that task instead of creating a duplicate
   // (and honour start_timer by flagging it for auto-start)
-  const dup = findDuplicateTask(req.user.id, name);
+  const dup = findTaskByName(req.user.id, name);
   if (dup) {
     if (start_timer) db.prepare('UPDATE tasks SET pending_start = 1 WHERE id = ?').run(dup.id);
     const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(dup.id);

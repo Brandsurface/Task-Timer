@@ -160,13 +160,20 @@ ports:
 
 - **Login / opret konto** — individuelle konti per bruger
 - **Opgaver** — opret, omdøb (dobbeltklik), slet, sorter med drag & drop.
-  Dubletnavne blokeres med en advarsel
+  To kort må have samme navn, når de har hvert sit arbejdsområde; samme navn og samme
+  område blokeres med en advarsel (store/små bogstaver, også æ/ø/å, tæller som ens)
+- **Knapper på kortet** — ★ stjernemarkerer kortet (beholdes af "Ren start", beskyttet mod
+  masse-sletning). ⊞ kopierer kortet: samme job, eget timer og eget arbejdsområde — kopien
+  lægges lige under originalen og får et ledigt område. Kopi-ikonet ved siden af kopierer
+  jobnummeret til udklipsholderen
 - **Forslag ved nyt job** — mens du skriver et jobnavn i "New task", foreslår appen
   tidligere gemte jobs (også slettede) som matcher det du har skrevet, fx kundenummer
   eller dele af navnet. Vælg med mus, eller pil op/ned + Enter; Esc lukker listen
-- **Opgavetyper** — vælg en type (fx Design, HTML-programmering, 3D render) fra en lille
-  dropdown på hvert opgavekort. Listen styrer du selv under Settings → Task types
-  (tilføj, omdøb, slet); dropdownen vises først, når der er oprettet mindst én type
+- **Arbejdsområder** — vælg et område (fx 10, 20 … 100 eller Design, 3D render) i den smalle
+  dropdown på hvert opgavekort; den er kun så bred som det længste navn kræver. Listen
+  styrer du selv under Settings → Work areas (tilføj, omdøb, slet); dropdownen vises først,
+  når der er oprettet mindst ét område. Området står efter navnet i Week, End day og PDF
+  ("Job (20)") og i CSV-kolonnen "Område"
 - **Timer** — start/stop per opgave, kun én kører ad gangen. Den kørende tid
   vises live i browserfanens titel. Tiden registreres på sekundet og afrundes aldrig
   (hverken op eller ned) — hverken når timeren stoppes, ved redigering, i listerne eller
@@ -177,12 +184,12 @@ ports:
   tæller ikke med i dag-/ugemål eller i PDF/CSV-eksport, men vises i Week. Pause selve
   Idle Time-kortet for at stoppe registreringen
 - **Aktivt kort øverst** — kortet med den kørende timer glider op øverst på listen, og de
-  andre kort gør plads. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
+  andre kort gør plads. Idle Time-kortet ligger altid nederst, også når det kører. Din egen rækkefølge ændres ikke: når timeren stoppes, glider kortet
   tilbage til sin plads. Det kørende kort kan ikke trækkes rundt. Respekterer
   "reducer bevægelse" i styresystemet
 - **Auto-stop** — timere stopper automatisk på konfigureret tidspunkt (standard 17:00)
 - **Ren start på dagen** — valgfrit under Settings → Start of day. Første gang du åbner
-  appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ via Select).
+  appen på en ny dag fjernes de opgavekort, der ikke er stjernemarkeret (★ på kortet).
   Stjernemarkerede kort bliver, og det samme gør opgaver oprettet eller brugt i dag og
   kørende timere. Fjernede opgaver er arkiveret, så historikken står i Week og navnene
   kan findes igen via forslagene ved nyt job. Slået til midt på dagen starter det først i morgen
@@ -193,14 +200,14 @@ ports:
 - **Ugeoversigt** — naviger uger frem/tilbage; samme job vises som én samlet række
   pr. dag, som kan foldes ud så de enkelte registreringer kan redigeres/slettes
 - **Eksport** — PDF-rapport og CSV (semikolon + dansk decimal-komma, klar til Excel),
-  begge med valgfrit kundenummer-filter. Tider vises med sekunder; CSV har t:mm:ss og
-  decimaltimer med 4 decimaler
+  begge med valgfrit kundenummer-filter. Tider vises med sekunder; CSV har kolonnen "Område",
+  tid som t:mm:ss og decimaltimer med 4 decimaler
 - **Backup** — automatisk konsistent databasebackup hver nat kl. 03; styres fra
   admin-panelet (antal der gemmes, manuel backup, status)
 - **Mål** — dag- og ugemål i procent
 - **Enter = bekræft** overalt i appen
 - **Indstillinger** — navn, dagsmål, ugemål, auto-stop, fraværs-advarsel, skrifttype,
-  ren dagsstart, Idle Time, opgavetyper, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
+  ren dagsstart, Idle Time, arbejdsområder, adgangskode, API-nøgle til Chrome-extension samt "What's new"-versionslog
 - **Sprog** — hele appens brugerflade er på engelsk (PDF/CSV-indhold er dansk,
   da de er dokumenter til kunder/bogholderi)
 
