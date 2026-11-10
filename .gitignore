@@ -4,3 +4,6 @@ data/
 .env
 *.bak
 Thumbs.db
+
+# video build output
+video/.build/
